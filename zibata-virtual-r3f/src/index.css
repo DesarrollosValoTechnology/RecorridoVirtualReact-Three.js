@@ -1,0 +1,646 @@
+/* ==========================================
+   0. VARIABLES DE COLOR (IDENTIDAD ZIBATÁ)
+   ========================================== */
+:root {
+    --zibata-verde: #5CB82A;
+    --zibata-verde-oscuro: #489420;
+    --zibata-carbon: #1A1A1A;
+    --zibata-blanco: #ffffff;
+
+    --panel-bg: rgba(26, 26, 26, 0.75);
+    --panel-blur: blur(12px);
+    --panel-borde: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ==========================================
+   1. RESET Y BASE
+   ========================================== */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+body, html, #root {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    touch-action: none;
+    background-color: #000000;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+canvas {
+    display: block;
+    outline: none;
+}
+
+/* ==========================================
+   2. PANTALLAS DE CARGA Y TRANSICIONES
+   ========================================== */
+#pantalla-carga-inicial {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background-color: white;
+    z-index: 10001;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 1.5s ease-in-out, background-color 2s ease;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+}
+
+#pantalla-carga-inicial.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+#fade-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background-color: black;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    z-index: 50;
+    pointer-events: none;
+}
+
+/* Spinner Verde Zibatá */
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-top: 4px solid var(--zibata-verde);
+    border-radius: 50%;
+    width: 50px; height: 50px;
+    animation: girar 1s linear infinite;
+}
+
+@keyframes girar {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ==========================================
+   3. UI OVERLAY — LAYOUT GENERAL
+   ========================================== */
+#ui-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 100;
+    pointer-events: none;
+}
+
+.btn-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+#ui-overlay > * {
+    pointer-events: auto;
+}
+
+/* Info nodo (top-left) */
+#info-nodo-actual {
+    position: absolute;
+    top: 30px; left: 30px;
+    z-index: 11;
+    color: white;
+    pointer-events: none;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
+    user-select: none;
+    transition: opacity 0.4s ease;
+}
+
+#info-titulo {
+    font-size: 22px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+#info-categoria {
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* Top-right (Herramientas) */
+.ui-top-right {
+    position: absolute;
+    top: 25px; right: 25px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.herramientas-pill {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: var(--panel-bg);
+    padding: 6px 16px;
+    border-radius: 30px;
+    backdrop-filter: var(--panel-blur);
+    border: var(--panel-borde);
+}
+
+/* 🚨 LA CÁPSULA INFERIOR (Como en Vanilla) 🚨 */
+.ui-bottom-bar-pill {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 25px;
+    background: rgba(26, 26, 26, 0.85);
+    padding: 10px 35px;
+    border-radius: 50px;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    z-index: 100;
+}
+
+/* BOTONES TRANSPARENTES CON TEXTO BLANCO */
+.ui-bottom-bar-pill button {
+    background: transparent !important;
+    color: #ffffff !important;
+    border: none !important;
+    padding: 8px 5px !important;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 15px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: none !important;
+}
+
+.ui-bottom-bar-pill button:hover {
+    background: transparent !important;
+    opacity: 0.7;
+    transform: scale(1.05);
+}
+
+/* Forzar iconos BLANCOS en la barra inferior */
+.ui-bottom-bar-pill button svg {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+    width: 22px;
+    height: 22px;
+}
+
+/* Redes Sociales (Bottom Left) */
+.ui-bottom-left {
+    position: absolute;
+    bottom: 30px; left: 30px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: var(--panel-bg);
+    padding: 10px 20px;
+    border-radius: 30px;
+    backdrop-filter: var(--panel-blur);
+    border: var(--panel-borde);
+}
+
+.texto-follow {
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--zibata-blanco);
+    border-right: 1px solid rgba(255,255,255,0.3);
+    padding-right: 15px;
+}
+
+.social-icons-row {
+    display: flex;
+    gap: 12px;
+}
+
+/* ==========================================
+   4. BOTONES GENÉRICOS
+   ========================================== */
+.btn-icon {
+    background: transparent !important;
+    border: none !important;
+    color: var(--zibata-blanco) !important;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    padding: 5px;
+}
+
+.btn-icon:hover {
+    opacity: 0.7;
+    transform: scale(1.1);
+}
+
+.btn-contacto {
+    background: var(--zibata-verde) !important;
+    color: var(--zibata-blanco) !important;
+    padding: 12px 28px !important;
+    border-radius: 30px !important;
+    border: none !important;
+    font-weight: bold;
+    font-size: 13px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(92, 184, 42, 0.4);
+}
+
+/* ETIQUETAS INFORMATIVAS (Los letreros de los Hotspots) */
+.texto-informativo {
+    background-color: rgba(26, 26, 26, 0.85);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 10px 20px;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    white-space: nowrap;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    pointer-events: none;
+}
+
+/* ==========================================
+   5. PANELES GENÉRICOS Y MODALES (GLASSMORPHISM)
+   ========================================== */
+.panel-generico {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: var(--panel-blur);
+    z-index: 300;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.panel-generico.oculto {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.panel-contenido {
+    background: var(--panel-bg);
+    color: var(--zibata-blanco);
+    padding: 30px;
+    border-radius: 12px;
+    position: relative;
+    width: 80%;
+    max-width: 600px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+    border: var(--panel-borde);
+    backdrop-filter: var(--panel-blur);
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-contenido.map-container {
+    width: 90vw;
+    height: 85vh;
+    max-width: 1200px;
+    padding: 20px;
+}
+
+.btn-cerrar-panel {
+    position: absolute;
+    top: -15px; right: -15px;
+    background: var(--zibata-carbon);
+    color: var(--zibata-blanco);
+    border: var(--panel-borde);
+    border-radius: 50%;
+    width: 35px; height: 35px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 301;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-cerrar-panel:hover {
+    background: var(--zibata-verde);
+}
+
+.form-title {
+    color: var(--zibata-blanco);
+    font-size: 22px;
+    font-weight: bold;
+    margin-top: 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 10px;
+}
+
+/* ==========================================
+   6. MENÚ LATERAL Y ACORDEONES
+   ========================================== */
+.categoria-seccion {
+    margin-bottom: 25px;
+}
+
+/* El nuevo header de categoría elegante */
+.btn-categoria-limpio {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    color: var(--zibata-blanco);
+    padding: 10px 0;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+    transition: opacity 0.2s ease;
+}
+
+.btn-categoria-limpio:hover {
+    opacity: 0.7;
+}
+
+.cat-icono {
+    font-size: 11px;
+    color: var(--zibata-verde);
+}
+
+.cat-nombre {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.5);
+}
+
+/* Línea difuminada que se estira hasta el final */
+.cat-linea {
+    flex-grow: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
+    margin-top: 2px;
+}
+
+/* La cuadrícula ahora es más inteligente y se adapta mejor */
+.rejilla-nodos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 18px;
+    transition: all 0.3s ease;
+}
+
+.rejilla-nodos.colapsada {
+    display: none;
+}
+
+/* Tarjetas premium */
+.tarjeta-nodo {
+    background: rgba(255, 255, 255, 0.03); /* Un gris super transparente */
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px; /* Más redondo, más moderno */
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.tarjeta-nodo:hover {
+    border-color: var(--zibata-verde);
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(92, 184, 42, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* El pin donde estamos parados */
+.tarjeta-nodo.activa {
+    border-color: var(--zibata-verde);
+    background: rgba(92, 184, 42, 0.1);
+}
+
+.tarjeta-nodo img {
+    width: 100%;
+    height: 130px;
+    object-fit: cover;
+    display: block;
+    background-color: #1a1a1a; /* 🚨 Fallback oscuro por si se rompe la imagen */
+    color: transparent; /* Oculta el icono de 'imagen rota' por defecto del navegador */
+}
+
+.tarjeta-nodo span {
+    display: block;
+    padding: 12px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    color: #e0e0e0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* ==========================================
+   7. CURSORES (Sincronizados con el código)
+   ========================================== */
+canvas {
+    cursor: grab !important;
+}
+
+canvas:active {
+    cursor: grabbing !important;
+}
+
+.sobre-hotspot, 
+.sobre-hotspot canvas,
+#ui-overlay *,
+button, 
+.tarjeta-nodo, 
+.icon-mapa {
+    cursor: pointer !important;
+}
+
+/* ==========================================
+   8. RESPONSIVE MÓVIL
+   ========================================== */
+@media (max-width: 768px) {
+    .ui-bottom-bar-pill {
+        width: 90%;
+        bottom: 20px;
+        padding: 8px 15px;
+        gap: 8px;
+    } 
+
+    .ui-bottom-bar-pill button {
+        padding: 8px 12px !important;
+        font-size: 11px;
+    }
+
+    .ui-bottom-left, .ui-top-right {
+        transform: scale(0.9);
+    }
+}
+
+/* ==========================================
+   9. SCROLLBAR PREMIUM (Para paneles y menú)
+   ========================================== */
+
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) rgba(0, 0, 0, 0.1);
+}
+
+/* Chrome, Edge, Safari (WebKit) */
+::-webkit-scrollbar {
+    width: 6px;  /* Scroll vertical muy delgado */
+    height: 6px; /* Scroll horizontal */
+}
+
+/* El "carril" por donde baja el scroll */
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2); 
+    border-radius: 10px;
+    margin: 10px 0; /* Un poco de aire arriba y abajo */
+}
+
+/* La barrita que arrastras */
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3); /* Blanco translúcido por defecto */
+    border-radius: 10px;
+}
+
+/* Cuando pasas el mouse por encima de la barrita */
+::-webkit-scrollbar-thumb:hover {
+    background: var(--zibata-verde); /* ¡Brilla en verde Zibatá! */
+}
+
+/* ==========================================
+   10. CONTROLES DEL MAPA DE GOOGLE
+   ========================================== */
+.map-premium-controls {
+    position: absolute; 
+    top: 20px; 
+    left: 20px; /* Alineado a la izquierda como en Vanilla */
+    z-index: 1000; 
+    display: flex; gap: 8px;
+    background: var(--panel-bg); 
+    padding: 6px; 
+    border-radius: 8px; 
+    backdrop-filter: var(--panel-blur);
+    border: var(--panel-borde);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+.btn-map-style {
+    background: transparent; 
+    color: #ccc; 
+    border: none; 
+    padding: 8px 16px;
+    border-radius: 6px; 
+    cursor: pointer; 
+    font-size: 11px; 
+    font-weight: bold;
+    letter-spacing: 1px; 
+    transition: all 0.3s ease; 
+    font-family: Arial, sans-serif;
+}
+
+.btn-map-style:hover {
+    color: var(--zibata-blanco); 
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-map-style.active {
+    background: var(--zibata-verde); 
+    color: var(--zibata-blanco); 
+    text-shadow: none;
+}
+
+/* ==========================================
+   11. TOOLTIP PREVIEW DEL MAPA
+   ========================================== */
+#tooltip-preview {
+    position: fixed;
+    pointer-events: none;
+    z-index: 99999; 
+    background: var(--panel-bg);
+    border: var(--panel-borde);
+    border-radius: 12px;
+    padding: 10px;
+    backdrop-filter: var(--panel-blur);
+    display: none; 
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+
+#img-preview {
+    width: 100%;
+    border-radius: 6px;
+    object-fit: cover;
+}
+
+#titulo-preview {
+    color: var(--zibata-blanco);
+    font-size: 12px;
+    font-weight: bold;
+    margin-top: 6px;
+    text-transform: uppercase;
+    text-align: center;
+    letter-spacing: 1px;
+}
+
+/* ==========================================
+   12. PINES DEL MAPA (GLOW Y RADAR)
+   ========================================== */
+.icon-mapa {
+    position: absolute;
+    width: 32px; 
+    height: 32px;
+    transform: translate(-50%, -50%);
+    pointer-events: auto; 
+    cursor: pointer;
+    z-index: 2001;
+    transition: transform 0.2s ease;
+}
+
+.icon-mapa svg {
+    width: 100%; height: 100%; display: block;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.icon-mapa.active {
+    filter: drop-shadow(0px 0px 8px var(--zibata-verde));
+    transform: translate(-50%, -50%) scale(1.2);
+}
+
+/* El pin donde estamos parados brilla en verde */
+.icon-mapa.active svg circle:first-child {
+    fill: var(--zibata-verde) !important;
+}
