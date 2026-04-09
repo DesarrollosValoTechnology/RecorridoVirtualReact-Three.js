@@ -20,7 +20,7 @@ export interface IHotspot {
     destino: string;
     tipo: TipoIcono;
     posicion: IVector3;
-    debug?: boolean; // El '?' significa que es opcional
+    debug?: boolean; // Ya lo tenías, ¡perfecto!
 }
 
 export interface ILabel {

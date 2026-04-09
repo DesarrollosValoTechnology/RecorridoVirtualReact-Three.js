@@ -1,30 +1,56 @@
 // src/data/nodos.ts
 import type { INodosTour } from '../types';
 
+// src/data/nodos.ts
+
 export const nodosTour: INodosTour = {
-    // 1. NODO INICIAL (Vista Aérea General)
+    // El "ID" o "Llave" del nodo. Se usa para referenciarlo en los botones de "destino".
     "zibata": {
-        tipo: "foto",
-        archivo: "/Assets/zibata.webp",
-        // 🚨 TUS COORDENADAS REALES DE INICIO 🚨
-        lat: 20.676716850667205,
-        lng: -100.33542417900068,
-        // 🚨 NUEVO: CALIBRADOR DE BRÚJULA (En grados) 🚨
+        tipo: "foto",              // Define si el fondo es una "foto" o un "video" 360.
+        archivo: "/Assets/zibata.webp", // Ruta de la imagen equirectangular en la carpeta public.
+        
+        // --- COORDENADAS GEOGRÁFICAS (Para panel location - Google Maps) ---
+        lat: 20.676716850667205,   // Latitud real para posicionar el pin en el mapa.
+        lng: -100.33542417900068,  // Longitud real para posicionar el pin en el mapa.
+        
+        // --- CALIBRACIÓN DE BRÚJULA ---
+        // Ajusta la rotación del "cono verde" en el mapa. 
+        // Si el norte de la foto no coincide con el del mapa, cambia este valor.
         norteOffset: 118.25,
-        solPos: { x: 308, y: 308, z: 4 },
+
+        // Posición del sol en el espacio 3D (X, Y, Z) para efectos de iluminación o destellos.
+        solPos: { x: 308, y: 308, z: 4 }, 
+
+        // --- INTERFAZ DE USUARIO (Cómo se ve en los menús) ---
         ui: {
-            categoria: "Exteriores Zibatá",
-            titulo: "Zibatá Vista Aerea",
-            miniatura: "/Assets/zibata_mini.jpeg"
+            categoria: "Exteriores Zibatá",    // Nombre del grupo en el menú de acordeón.
+            titulo: "Zibatá Vista Aerea",      // Nombre que aparece en la esquina superior y previsualizaciones.
+            miniatura: "/Assets/zibata_mini.jpeg" // Imagen pequeña para el menú y el tooltip del mapa.
         },
+
+        // --- PUNTOS DE NAVEGACIÓN (Interacción 3D) ---
         hotspots: [
-            { destino: "jamadi", tipo: "drone", posicion: { x: -10, y: -50, z: -30 } /*debug: true*/ },
-            { destino: "discovery", tipo: "pasos", posicion: { x: -95, y: -80, z: -230 } }
+            { 
+                destino: "jamadi",         // ID del nodo al que viajarás al hacer clic.
+                tipo: "drone",             // Icono que se dibujará (definido en Hotspot.tsx).
+                posicion: { x: -10, y: -50, z: -30 }, // Coordenadas 3D dentro de la esfera.
+                debug: true           // Si lo activas, muestra ejes para ayudarte a posicionarlo.
+            },
+            { 
+                destino: "discovery", 
+                tipo: "pasos", 
+                posicion: { x: -95, y: -80, z: -230 } 
+            }
         ],
+
+        // --- ETIQUETAS INFORMATIVAS (Textos flotantes) ---
         labels: [
             { 
+                // Texto a mostrar. Si coincide con una llave en diccionario.ts, se traduce.
                 texto: "LBL_ENTRADA", 
+                // Punto exacto que la línea del label está señalando.
                 target: { x: -40, y: -60, z: -150 }, 
+                // Distancia a la que flota el cuadro de texto respecto al target.
                 offset: { x: 0, y: 120, z: 0 }      
             },
             { 
@@ -70,7 +96,7 @@ export const nodosTour: INodosTour = {
         tipo: "foto",
         archivo: "/Assets/foto_jamadi.jpg", 
         lat: 20.677500,
-        lng: -100.335400,
+        lng: -100.335400,           // Si lo activas, muestra ejes para ayudarte a posicionarlo.
         ui: {
             categoria: "Amenidades",
             titulo: "Parque Jamadi",

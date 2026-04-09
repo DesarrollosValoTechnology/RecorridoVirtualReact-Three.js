@@ -30,6 +30,9 @@ interface TourState {
     toggleRotacion: () => void;
     cambiarIdioma: () => void;
     cargarNodo: (id: string) => void;
+    // Agrega esto dentro de tu interface TourState:
+    tooltipHover: { titulo: string, miniatura: string, x: number, y: number } | null;
+    setTooltipHover: (data: any) => void;
 }
 
 export const useTourStore = create<TourState>((set, get) => ({
@@ -64,4 +67,7 @@ export const useTourStore = create<TourState>((set, get) => ({
         set({ isTransitioning: true, fadeActivo: true });
         setTimeout(() => { set({ nodoActual: id }); }, 500);
     },
+    // Y esto dentro de la creación del store (adentro del create):
+    tooltipHover: null,
+    setTooltipHover: (val) => set({ tooltipHover: val }),
 }));

@@ -12,39 +12,44 @@ export default function IntroAnimacion() {
     const pseudoTarget = useRef(new THREE.Vector3(0, 0, 0));
 
     useEffect(() => {
+        // Posición inicial del Tiny Planet
         camera.position.set(-1, 250, 0);
         (camera as THREE.PerspectiveCamera).fov = 140;
         camera.updateProjectionMatrix();
-    }, [camera]); // Añadida la dependencia segura
+    }, [camera]);
 
-    useFrame(() => {
+    useFrame((_state, delta) => {
         if (!isTransitioning) return;
 
         const cam = camera as THREE.PerspectiveCamera;
 
+        // Aceleración de la caída
         if (velocidadCaida.current < 0.004) {
             velocidadCaida.current += 0.00003; 
         }
 
+        // 1. Mirada: Se desplaza suavemente hacia el horizonte (Eje X)
         pseudoTarget.current.lerp(new THREE.Vector3(100, 0, 0), velocidadCaida.current);
+        
+        // 2. Posición: Desciende hacia el centro de la escena
         cam.position.lerp(new THREE.Vector3(0, 0, 0.1), velocidadCaida.current);
         cam.lookAt(pseudoTarget.current);
 
+        // 3. Zoom: El FOV pasa de 140 a 75
         let velocidadZoom = velocidadCaida.current * 2;
         if (Math.abs(cam.fov - 75) > 0.01) {
             cam.fov += (75 - cam.fov) * velocidadZoom;
             cam.updateProjectionMatrix();
         }
 
-        // 🚨 EL ARREGLO: Mantenemos informado al OrbitControls hacia dónde estamos mirando
+        // Sincronizar OrbitControls
         if (controls) {
             (controls as any).target.copy(pseudoTarget.current);
-            (controls as any).update(); // Actualiza sus matemáticas internas sin dar saltos
+            (controls as any).update();
         }
     });
 
-    // 🚨 SEGURO DE VIDA: Justo en el milisegundo que termina la transición, 
-    // aseguramos el último frame perfecto antes de entregarle el mando al usuario.
+    // Asegurar el último frame perfecto al terminar la transición
     useEffect(() => {
         if (!isTransitioning && controls) {
             (controls as any).target.copy(pseudoTarget.current);

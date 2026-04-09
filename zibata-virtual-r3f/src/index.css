@@ -6,7 +6,6 @@
     --zibata-verde-oscuro: #489420;
     --zibata-carbon: #1A1A1A;
     --zibata-blanco: #ffffff;
-
     --panel-bg: rgba(26, 26, 26, 0.75);
     --panel-blur: blur(12px);
     --panel-borde: 1px solid rgba(255, 255, 255, 0.1);
@@ -19,11 +18,12 @@
     box-sizing: border-box;
 }
 
+/* En el bloque base, fuera del media query */
 body, html, #root {
     margin: 0;
     padding: 0;
     width: 100%;
-    height: 100%;
+    height: 100dvh; /* 👈 cambia 100% por 100dvh */
     overflow: hidden;
     touch-action: none;
     background-color: #000000;
@@ -70,7 +70,6 @@ canvas {
     pointer-events: none;
 }
 
-/* Spinner Verde Zibatá */
 .spinner {
     border: 4px solid rgba(0, 0, 0, 0.1);
     border-top: 4px solid var(--zibata-verde);
@@ -89,10 +88,9 @@ canvas {
    ========================================== */
 #ui-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
+    top: 0; left: 0;
     width: 100vw;
-    height: 100vh;
+    height: 100dvh; /* 👈 cambia 100vh por 100dvh */
     z-index: 100;
     pointer-events: none;
 }
@@ -106,7 +104,6 @@ canvas {
     pointer-events: auto;
 }
 
-/* Info nodo (top-left) */
 #info-nodo-actual {
     position: absolute;
     top: 30px; left: 30px;
@@ -133,7 +130,6 @@ canvas {
     color: rgba(255, 255, 255, 0.85);
 }
 
-/* Top-right (Herramientas) */
 .ui-top-right {
     position: absolute;
     top: 25px; right: 25px;
@@ -153,7 +149,6 @@ canvas {
     border: var(--panel-borde);
 }
 
-/* 🚨 LA CÁPSULA INFERIOR (Como en Vanilla) 🚨 */
 .ui-bottom-bar-pill {
     position: absolute;
     bottom: 30px;
@@ -172,7 +167,6 @@ canvas {
     z-index: 100;
 }
 
-/* BOTONES TRANSPARENTES CON TEXTO BLANCO */
 .ui-bottom-bar-pill button {
     background: transparent !important;
     color: #ffffff !important;
@@ -195,7 +189,6 @@ canvas {
     transform: scale(1.05);
 }
 
-/* Forzar iconos BLANCOS en la barra inferior */
 .ui-bottom-bar-pill button svg {
     color: #ffffff !important;
     stroke: #ffffff !important;
@@ -203,7 +196,6 @@ canvas {
     height: 22px;
 }
 
-/* Redes Sociales (Bottom Left) */
 .ui-bottom-left {
     position: absolute;
     bottom: 30px; left: 30px;
@@ -265,7 +257,6 @@ canvas {
     box-shadow: 0 4px 15px rgba(92, 184, 42, 0.4);
 }
 
-/* ETIQUETAS INFORMATIVAS (Los letreros de los Hotspots) */
 .texto-informativo {
     background-color: rgba(26, 26, 26, 0.85);
     backdrop-filter: blur(10px);
@@ -367,7 +358,6 @@ canvas {
     margin-bottom: 25px;
 }
 
-/* El nuevo header de categoría elegante */
 .btn-categoria-limpio {
     width: 100%;
     text-align: left;
@@ -400,7 +390,6 @@ canvas {
     text-shadow: 1px 1px 4px rgba(0,0,0,0.5);
 }
 
-/* Línea difuminada que se estira hasta el final */
 .cat-linea {
     flex-grow: 1;
     height: 1px;
@@ -408,7 +397,6 @@ canvas {
     margin-top: 2px;
 }
 
-/* La cuadrícula ahora es más inteligente y se adapta mejor */
 .rejilla-nodos {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -420,11 +408,10 @@ canvas {
     display: none;
 }
 
-/* Tarjetas premium */
 .tarjeta-nodo {
-    background: rgba(255, 255, 255, 0.03); /* Un gris super transparente */
+    background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px; /* Más redondo, más moderno */
+    border-radius: 12px;
     cursor: pointer;
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -439,7 +426,6 @@ canvas {
     background: rgba(255, 255, 255, 0.08);
 }
 
-/* El pin donde estamos parados */
 .tarjeta-nodo.activa {
     border-color: var(--zibata-verde);
     background: rgba(92, 184, 42, 0.1);
@@ -450,8 +436,8 @@ canvas {
     height: 130px;
     object-fit: cover;
     display: block;
-    background-color: #1a1a1a; /* 🚨 Fallback oscuro por si se rompe la imagen */
-    color: transparent; /* Oculta el icono de 'imagen rota' por defecto del navegador */
+    background-color: #1a1a1a;
+    color: transparent;
 }
 
 .tarjeta-nodo span {
@@ -465,8 +451,9 @@ canvas {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
 /* ==========================================
-   7. CURSORES (Sincronizados con el código)
+   7. CURSORES
    ========================================== */
 canvas {
     cursor: grab !important;
@@ -476,109 +463,187 @@ canvas:active {
     cursor: grabbing !important;
 }
 
-.sobre-hotspot, 
+.sobre-hotspot,
 .sobre-hotspot canvas,
 #ui-overlay *,
-button, 
-.tarjeta-nodo, 
+button,
+.tarjeta-nodo,
 .icon-mapa {
     cursor: pointer !important;
+}
+
+/* ==========================================
+   RESPONSIVE TABLET / VENTANA ESTRECHA
+   ========================================== */
+@media (max-width: 1024px) {
+    /* Subimos las redes sociales para que no choquen con el menú inferior */
+    .ui-bottom-left {
+        bottom: 100px !important;
+    }
+
+    /* Reducimos el gap de la bottom pill para que no se expanda tanto */
+    .ui-bottom-bar-pill {
+        gap: 15px !important;
+        padding: 10px 20px !important;
+    }
 }
 
 /* ==========================================
    8. RESPONSIVE MÓVIL
    ========================================== */
 @media (max-width: 768px) {
-    .ui-bottom-bar-pill {
-        width: 90%;
-        bottom: 20px;
-        padding: 8px 15px;
+    #info-nodo-actual {
+        top: 15px !important;
+        left: 15px !important;
+        max-width: 55%;
+    }
+    #info-titulo { font-size: 16px !important; }
+    #info-categoria { font-size: 9px !important; }
+
+    .ui-top-right {
+        top: 15px !important;
+        right: 15px !important;
+        flex-direction: column;
+        align-items: flex-end;
         gap: 8px;
-    } 
+    }
+
+    .herramientas-pill {
+    display: flex !important;
+    order: 2; /* Va debajo del botón contacto */
+    padding: 6px 10px !important;
+    gap: 6px !important;
+    }
+
+    /* Oculta solo el botón VR en móvil */
+    .herramientas-pill button:first-child {
+        display: none !important;
+    }
+
+    /* El botón contacto arriba */
+    .btn-contacto {
+        order: 1;
+    }
+
+    .btn-contacto {
+        padding: 8px 16px !important;
+        font-size: 11px !important;
+    }
+
+    .ui-bottom-left {
+        bottom: 90px !important;
+        left: 15px !important;
+        padding: 8px 12px !important;
+    }
+    .texto-follow {
+        display: none !important;
+    }
+
+    /* 👇 FIX SAFE AREA iOS */
+    .ui-bottom-bar-pill {
+        width: 95% !important;
+        bottom: 15px !important;
+        padding: 10px 5px !important;
+        gap: 5px !important;
+        justify-content: space-around !important;
+        border-radius: 25px;
+    }
 
     .ui-bottom-bar-pill button {
-        padding: 8px 12px !important;
-        font-size: 11px;
+        flex-direction: column !important;
+        gap: 4px !important;
+        font-size: 9px !important;
+        padding: 5px !important;
+        min-width: 65px;
     }
 
-    .ui-bottom-left, .ui-top-right {
-        transform: scale(0.9);
+    .ui-bottom-bar-pill button svg {
+        width: 18px !important;
+        height: 18px !important;
     }
+
+    .panel-contenido {
+        width: 95% !important;
+        padding: 20px !important;
+        max-height: 85vh;
+    }
+
+    .panel-contenido.map-container {
+        width: 98vw !important;
+        height: 85vh !important;
+        padding: 10px !important;
+    }
+
+    .form-title { font-size: 18px !important; }
 }
 
 /* ==========================================
-   9. SCROLLBAR PREMIUM (Para paneles y menú)
+   9. SCROLLBAR PREMIUM
    ========================================== */
-
-/* Firefox */
 * {
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.3) rgba(0, 0, 0, 0.1);
 }
 
-/* Chrome, Edge, Safari (WebKit) */
 ::-webkit-scrollbar {
-    width: 6px;  /* Scroll vertical muy delgado */
-    height: 6px; /* Scroll horizontal */
+    width: 6px;
+    height: 6px;
 }
 
-/* El "carril" por donde baja el scroll */
 ::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2); 
+    background: rgba(0, 0, 0, 0.2);
     border-radius: 10px;
-    margin: 10px 0; /* Un poco de aire arriba y abajo */
+    margin: 10px 0;
 }
 
-/* La barrita que arrastras */
 ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3); /* Blanco translúcido por defecto */
+    background: rgba(255, 255, 255, 0.3);
     border-radius: 10px;
 }
 
-/* Cuando pasas el mouse por encima de la barrita */
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--zibata-verde); /* ¡Brilla en verde Zibatá! */
+    background: var(--zibata-verde);
 }
 
 /* ==========================================
    10. CONTROLES DEL MAPA DE GOOGLE
    ========================================== */
 .map-premium-controls {
-    position: absolute; 
-    top: 20px; 
-    left: 20px; /* Alineado a la izquierda como en Vanilla */
-    z-index: 1000; 
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
     display: flex; gap: 8px;
-    background: var(--panel-bg); 
-    padding: 6px; 
-    border-radius: 8px; 
+    background: var(--panel-bg);
+    padding: 6px;
+    border-radius: 8px;
     backdrop-filter: var(--panel-blur);
     border: var(--panel-borde);
     box-shadow: 0 4px 15px rgba(0,0,0,0.5);
 }
 
 .btn-map-style {
-    background: transparent; 
-    color: #ccc; 
-    border: none; 
+    background: transparent;
+    color: #ccc;
+    border: none;
     padding: 8px 16px;
-    border-radius: 6px; 
-    cursor: pointer; 
-    font-size: 11px; 
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
     font-weight: bold;
-    letter-spacing: 1px; 
-    transition: all 0.3s ease; 
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
     font-family: Arial, sans-serif;
 }
 
 .btn-map-style:hover {
-    color: var(--zibata-blanco); 
+    color: var(--zibata-blanco);
     background: rgba(255, 255, 255, 0.1);
 }
 
 .btn-map-style.active {
-    background: var(--zibata-verde); 
-    color: var(--zibata-blanco); 
+    background: var(--zibata-verde);
+    color: var(--zibata-blanco);
     text-shadow: none;
 }
 
@@ -588,13 +653,13 @@ button,
 #tooltip-preview {
     position: fixed;
     pointer-events: none;
-    z-index: 99999; 
+    z-index: 99999;
     background: var(--panel-bg);
     border: var(--panel-borde);
     border-radius: 12px;
     padding: 10px;
     backdrop-filter: var(--panel-blur);
-    display: none; 
+    display: none;
     flex-direction: column;
     align-items: center;
     box-shadow: 0 10px 30px rgba(0,0,0,0.8);
@@ -621,10 +686,10 @@ button,
    ========================================== */
 .icon-mapa {
     position: absolute;
-    width: 32px; 
+    width: 32px;
     height: 32px;
     transform: translate(-50%, -50%);
-    pointer-events: auto; 
+    pointer-events: auto;
     cursor: pointer;
     z-index: 2001;
     transition: transform 0.2s ease;
@@ -640,7 +705,6 @@ button,
     transform: translate(-50%, -50%) scale(1.2);
 }
 
-/* El pin donde estamos parados brilla en verde */
 .icon-mapa.active svg circle:first-child {
     fill: var(--zibata-verde) !important;
 }
