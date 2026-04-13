@@ -6,27 +6,20 @@ import Hotspot from './Hotspot';
 import Label from './Label';
 import EsferaProgresiva from './EsferaProgresiva'; 
 import { useFrame, useThree } from '@react-three/fiber';
-// 🚨 1. Asegúrate de importar THREE para poder usar vectores
 import * as THREE from 'three'; 
 
-// 🚨 2. EL ESPÍA DEFINITIVO (Brújula Vectorial + Anti-Matracas)
-function SincronizadorMinimapa() {
+// 🚨 1. Ahora el espía recibe el offset (en grados) que pones en nodos.ts
+function SincronizadorMinimapa({ offsetGrados = 0 }: { offsetGrados: number }) {
     const { camera } = useThree();
     
     const rotacionAnterior = useRef(0);
     const rotacionAcumulada = useRef(0);
-    // Guardamos un vector en memoria para no saturar la app a 60fps
     const vectorDireccion = useRef(new THREE.Vector3());
 
     useFrame(() => {
-        // PASO A: Obtenemos el vector real hacia donde apunta el lente de la cámara
         camera.getWorldDirection(vectorDireccion.current);
-        
-        // PASO B: Usamos atan2 para sacar el ángulo exacto en el plano 2D (X y Z).
-        // Esto IGNORA por completo si estás mirando al piso o al cielo. Solo saca el "Norte/Sur/Este/Oeste".
         const rotacionActual = Math.atan2(vectorDireccion.current.x, vectorDireccion.current.z);
 
-        // PASO C: El Anti-Matracas (para que cuando dé la vuelta de 360 a 0, no se regrese)
         let delta = rotacionActual - rotacionAnterior.current;
 
         if (delta > Math.PI) delta -= Math.PI * 2;
@@ -35,9 +28,15 @@ function SincronizadorMinimapa() {
         rotacionAcumulada.current += delta;
         rotacionAnterior.current = rotacionActual;
 
-        // 🚨 OJO AQUÍ: Dependiendo de tu cámara 360, puede que el mapa gire al revés. 
-        // Si gira al revés, simplemente ponle un signo menos: `${-rotacionAcumulada.current}rad`
-        document.documentElement.style.setProperty('--rotacion-gta', `${rotacionAcumulada.current}rad`);
+        // 🚨 2. LA MAGIA DE LA CALIBRACIÓN: 
+        // Convertimos tus grados de nodos.ts a radianes y se lo sumamos a la brújula
+        const offsetRadianes = offsetGrados * (Math.PI / 180);
+        
+        // NOTA: Si ves que gira al revés (cuando vas a la derecha el mapa va a la izq), 
+        // ponle un signo menos al rotacionAcumulada.current
+        const rotacionFinal = rotacionAcumulada.current + offsetRadianes;
+
+        document.documentElement.style.setProperty('--rotacion-gta', `${rotacionFinal}rad`);
     });
     
     return null;
@@ -61,8 +60,8 @@ export default function Escena360() {
 
     return (
         <group>
-            {/* INVOCAMOS AL ESPÍA AQUÍ ADENTRO */}
-            <SincronizadorMinimapa />
+            {/* 🚨 3. Le pasamos el valor de calibración al espía */}
+            <SincronizadorMinimapa offsetGrados={infoNodo.norteOffset || 0} />
 
             <EsferaProgresiva 
                 rutaBajaRes={infoNodo.archivoBlur || infoNodo.archivo} 

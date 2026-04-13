@@ -4,8 +4,6 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useTourStore } from '../store/useTourStore';
 
-// 🚨 SOLUCIÓN PUNTO 3: Creamos el "molde" exacto de OrbitControls
-// Así TypeScript sabe perfectamente qué herramientas tiene disponibles
 interface IOrbitControls {
     target: THREE.Vector3;
     update: () => void;
@@ -16,34 +14,45 @@ export default function IntroAnimacion() {
     const isTransitioning = useTourStore(state => state.isTransitioning);
     
     const velocidadCaida = useRef(0.00001);
-    const pseudoTarget = useRef(new THREE.Vector3(0, 0, 0));
+    // 🚨 CAMBIO 1: Iniciamos el target un poco desplazado en Z
+    // Esto le da a la cámara una "dirección" desde el segundo cero y evita el giro brusco
+    const pseudoTarget = useRef(new THREE.Vector3(0, 0, 0.01));
 
     useEffect(() => {
-        camera.position.set(-1, 250, 0);
+        // Posicionamos la cámara en lo alto
+        camera.position.set(-0.001, 250, 0.001);
         (camera as THREE.PerspectiveCamera).fov = 140;
         camera.updateProjectionMatrix();
-    }, [camera]);
+
+        // 🚨 CAMBIO 2: SINCRONIZACIÓN INSTANTÁNEA
+        // Obligamos a los controles y a la cámara a mirar el punto inicial 
+        // ANTES de que empiece el primer frame de la animación.
+        const ctrl = controls as unknown as IOrbitControls;
+        if (ctrl && ctrl.target) {
+            ctrl.target.copy(pseudoTarget.current);
+            ctrl.update();
+        } else {
+            camera.lookAt(pseudoTarget.current);
+        }
+    }, [camera, controls]);
 
     useFrame((_state, delta) => {
         if (!isTransitioning) return;
 
         const cam = camera as THREE.PerspectiveCamera;
-
-        // 🚨 EL ANTÍDOTO: Normalizamos el delta basado en 60 FPS
-        // Si el monitor va a 60hz, ajusteFPS será 1. 
-        // Si va a 144hz, será 0.4. Si va a 30hz, será 2.
         const ajusteFPS = delta * 60;
 
-        // Multiplicamos nuestra aceleración por el ajuste
         if (velocidadCaida.current < 0.004) {
             velocidadCaida.current += 0.00003 * ajusteFPS; 
         }
 
-        // Multiplicamos la fuerza del Lerp (Interpolación) por el ajuste
         const lerpFactor = velocidadCaida.current * ajusteFPS;
 
-        pseudoTarget.current.lerp(new THREE.Vector3(100, 0, 0), lerpFactor);
-        cam.position.lerp(new THREE.Vector3(0, 0, 0.1), lerpFactor);
+        // "Levantamos la cara" hacia el horizonte
+        pseudoTarget.current.lerp(new THREE.Vector3(0, 0, 50), lerpFactor);
+        
+        // La cámara cae al centro
+        cam.position.lerp(new THREE.Vector3(0, 0, 0), lerpFactor);
 
         let velocidadZoom = velocidadCaida.current * 2 * ajusteFPS;
         if (Math.abs(cam.fov - 75) > 0.01) {
@@ -65,10 +74,15 @@ export default function IntroAnimacion() {
         const ctrl = controls as unknown as IOrbitControls;
         
         if (!isTransitioning && ctrl && ctrl.target) {
-            ctrl.target.copy(pseudoTarget.current);
+            const direction = new THREE.Vector3();
+            camera.getWorldDirection(direction);
+            const tinyDistance = 0.01;
+            const newTarget = camera.position.clone().add(direction.multiplyScalar(tinyDistance));
+
+            ctrl.target.copy(newTarget);
             ctrl.update();
         }
-    }, [isTransitioning, controls]);
+    }, [isTransitioning, controls, camera]);
 
     return null;
 }

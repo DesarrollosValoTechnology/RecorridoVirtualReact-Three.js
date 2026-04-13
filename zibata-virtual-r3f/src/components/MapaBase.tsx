@@ -7,6 +7,10 @@ interface Props {
     esMinimapa?: boolean;
 }
 
+// 🚨 AJUSTE MANUAL DEL PLANO .WEBP
+// Calibrado a -58 grados para coincidir con el Norte real de Zibatá
+const ROTACION_IMAGEN_MANUAL = -58; 
+
 export default function MapaBase({ esMinimapa = false }: Props) {
     const nodoActual = useTourStore((state) => state.nodoActual);
     const infoNodo = nodosTour[nodoActual];
@@ -26,7 +30,6 @@ export default function MapaBase({ esMinimapa = false }: Props) {
         if (!esMinimapa) setEscala(1);
     }, [nodoActual, esMinimapa]);
 
-    // Handlers de Mouse y Touch (mantenemos tu lógica que ya funcionaba)
     const iniciarArrastreMouse = (e: React.MouseEvent) => {
         if (esMinimapa) return;
         setArrastrando(true);
@@ -86,7 +89,7 @@ export default function MapaBase({ esMinimapa = false }: Props) {
             <div style={{
                 width: '100%', height: '100%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transform: `scale(${esMinimapa ? 1 : escala})`, // Zoom del minimapa
+                transform: `scale(${esMinimapa ? 0.25 : escala})`, 
                 transition: arrastrando ? 'none' : 'transform 0.2s ease-out'
             }}>
                 {/* CAPA DE POSICIÓN Y ROTACIÓN */}
@@ -96,12 +99,12 @@ export default function MapaBase({ esMinimapa = false }: Props) {
                         position: 'absolute',
                         width: '3000px', 
                         height: 'auto',
-                        transform: `translate(calc(50% - ${posX}% + ${offset.x}px), calc(50% - ${posY}% + ${offset.y}px)) ${esMinimapa ? 'rotate(var(--rotacion-gta, 0rad))' : 'rotate(0rad)'}`,
+                        transform: `translate(calc(50% - ${posX}% + ${offset.x}px), calc(50% - ${posY}% + ${offset.y}px)) 
+                                    ${esMinimapa ? `rotate(calc(var(--rotacion-gta, 0rad) + ${ROTACION_IMAGEN_MANUAL}deg))` : 'rotate(0rad)'}`,
                         transformOrigin: `${posX}% ${posY}%`,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        // 🚨 LE REGRESAMOS LA FLUIDEZ AQUÍ:
                         transition: arrastrando ? 'none' : 'transform 0.15s linear'
                     }}
                 >
@@ -120,10 +123,11 @@ export default function MapaBase({ esMinimapa = false }: Props) {
                     )}
                 </div>
             </div>
+            
 
-            {/* FLECHA DE NAVEGACIÓN ESTILO GPS */}
+            {/* INTERFAZ DEL MINIMAPA (Sin líneas de debug) */}
             {esMinimapa && (
-                <div className="cursor-gta">
+                <div className="cursor-gta" style={{ zIndex: 1001 }}>
                     <svg 
                         width="34" 
                         height="34" 
@@ -131,8 +135,6 @@ export default function MapaBase({ esMinimapa = false }: Props) {
                         fill="#5CB82A"
                         xmlns="http://www.w3.org/2000/svg"
                         style={{ 
-                            // 🚨 LA CORRECCIÓN: El icono nativo apunta a la esquina superior derecha.
-                            // Rotándolo -45 grados, lo forzamos a apuntar exactamente hacia arriba.
                             transform: 'rotate(0deg)', 
                             filter: 'drop-shadow(0px 3px 5px rgba(0,0,0,0.6))'
                         }}

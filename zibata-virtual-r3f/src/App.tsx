@@ -153,8 +153,30 @@ function App() {
             <FadeOverlay />
             <TooltipPreview />
 
+            {/* =========================================
+                🎯 CROSSHAIR DE CALIBRACIÓN (Centro 3D) 🎯
+               ========================================= 
+            <div style={{
+                position: 'absolute',
+                top: '50%', 
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                zIndex: 9999, // Debe estar por encima del Canvas para ser visible
+                pointerEvents: 'none', // Permite interactuar con la escena a través de él
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }}>
+                <div style={{ width: '4px', height: '4px', backgroundColor: 'white', borderRadius: '50%', boxShadow: '0 0 4px rgba(0,0,0,0.8)' }}></div>
+                <div style={{ position: 'absolute', top: '-15px', width: '2px', height: '10px', backgroundColor: 'white', boxShadow: '0 0 4px rgba(0,0,0,0.8)' }}></div>
+                <div style={{ position: 'absolute', bottom: '-15px', width: '2px', height: '10px', backgroundColor: 'white', boxShadow: '0 0 4px rgba(0,0,0,0.8)' }}></div>
+                <div style={{ position: 'absolute', left: '-15px', width: '10px', height: '2px', backgroundColor: 'white', boxShadow: '0 0 4px rgba(0,0,0,0.8)' }}></div>
+                <div style={{ position: 'absolute', right: '-15px', width: '10px', height: '2px', backgroundColor: 'white', boxShadow: '0 0 4px rgba(0,0,0,0.8)' }}></div>
+            </div> */}
+
             <Canvas
-                camera={{ position: [-1, 250, 0], fov: 140 }}
+                // 🚨 Cambiamos -1 por -0.001 y Z por 0.001
+                camera={{ position: [-0.001, 250, 0.001], fov: 140 }}
                 style={{ position: 'absolute', top: 0, left: 0 }}
             >
                 <XR store={xrStore}>
