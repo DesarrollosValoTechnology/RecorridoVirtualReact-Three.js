@@ -1,17 +1,20 @@
 // src/data/nodos.ts
 import type { INodosTour } from '../types';
 
-// src/data/nodos.ts
-
 export const nodosTour: INodosTour = {
-    // El "ID" o "Llave" del nodo. Se usa para referenciarlo en los botones de "destino".
+    // 1. NODO INICIAL (Vista Aérea General)
     "zibata": {
         tipo: "foto",              // Define si el fondo es una "foto" o un "video" 360.
-        archivo: "/Assets/zibata.webp", // Ruta de la imagen equirectangular en la carpeta public.
+        archivoBlur: "/Assets/zibata_blur.jpg",  //Imagen de baja resolución para carga rapida
+        archivo: "/Assets/zibata.webp", // Imagen de alta calidad, carga despues
         
         // --- COORDENADAS GEOGRÁFICAS (Para panel location - Google Maps) ---
         lat: 20.676716850667205,   // Latitud real para posicionar el pin en el mapa.
         lng: -100.33542417900068,  // Longitud real para posicionar el pin en el mapa.
+
+            // 🚨 LO NUEVO PARA EL PLANO:
+        mapaX: 42.5, // Porcentaje de izquierda a derecha
+        mapaY: 79.25, // Porcentaje de arriba hacia abajo
         
         // --- CALIBRACIÓN DE BRÚJULA ---
         // Ajusta la rotación del "cono verde" en el mapa. 
@@ -96,7 +99,7 @@ export const nodosTour: INodosTour = {
         tipo: "foto",
         archivo: "/Assets/foto_jamadi.jpg", 
         lat: 20.677500,
-        lng: -100.335400,           // Si lo activas, muestra ejes para ayudarte a posicionarlo.
+        lng: -100.335400,
         ui: {
             categoria: "Amenidades",
             titulo: "Parque Jamadi",
@@ -145,6 +148,12 @@ export const nodosTour: INodosTour = {
         archivo: "/Assets/DiscoveryPrincipal.png", 
         lat: 20.675910,
         lng: -100.334010,
+        // 🚨 SOLUCIÓN PUNTO 2: Bloque UI agregado
+        ui: {
+            categoria: "Amenidades",
+            titulo: "Interior Discovery",
+            miniatura: "/Assets/discovery_mini.jpg" // Puedes actualizar la ruta real de tu miniatura aquí
+        },
         hotspots: [
             { destino: "discovery", tipo: "persona", posicion: { x: 0, y: -40, z: 120 } }
         ],
@@ -184,7 +193,8 @@ export const nodosTour: INodosTour = {
     // 6. CANCHAS DE PÁDEL
     "cancha_padel": {
         tipo: "foto",
-        archivo: "/assets/padel.jpeg", 
+        // 🚨 SOLUCIÓN PUNTO 4: 'Assets' con A mayúscula
+        archivo: "/Assets/padel.jpeg", 
         lat: 20.676300,
         lng: -100.337200,
         ui: {

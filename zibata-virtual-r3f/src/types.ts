@@ -33,8 +33,11 @@ export interface ILabel {
 export interface INodo {
     tipo: 'foto';
     archivo: string;
+    archivoBlur?: string;
     lat: number;
     lng: number;
+    mapaX?: number;
+    mapaY?: number;
     norteOffset?: number;
     solPos?: IVector3;
     ui?: IUIInfo;

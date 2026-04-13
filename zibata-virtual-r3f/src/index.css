@@ -708,3 +708,103 @@ button,
 .icon-mapa.active svg circle:first-child {
     fill: var(--zibata-verde) !important;
 }
+
+/* --- 13. CONTENEDORES DE MAPA --- */
+.contenedor-mapa {
+    position: relative;
+    background-color: #1a1a1a;
+    overflow: hidden; 
+    border-radius: 12px;
+}
+
+/* Modo Minimapa (Círculo Flotante) */
+.modo-minimapa {
+    position: absolute;
+    /* ✅ POSICIÓN ORIGINAL EN ESCRITORIO */
+    bottom: 25px; 
+    right: 25px;
+    width: 170px; 
+    height: 170px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    z-index: 100;
+    pointer-events: none; /* No roba clics al 3D */
+}
+
+/* Modo Panel (Mapa Grande) */
+.modo-panel {
+    width: 100%;
+    height: 100%;
+}
+
+/* --- CAPAS DEL LIENZO --- */
+.lienzo-transformable {
+    position: absolute;
+    width: 300%; 
+    height: 300%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.imagen-plano {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+/* --- CURSORES Y MARCADORES --- */
+/* --- EL CURSOR GTA (Contenedor del SVG) --- */
+.cursor-gta {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Solo para centrar el div */
+    z-index: 999;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.marcador-panel-grande {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+}
+
+.pulso-verde {
+    width: 18px;
+    height: 18px;
+    background-color: #5CB82A;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 15px #5CB82A;
+    animation: pulsoAnim 2s infinite;
+}
+
+@keyframes pulsoAnim {
+    0% { transform: scale(0.9); opacity: 0.8; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(0.9); opacity: 0.8; }
+}
+
+/* --- 📱 DISEÑO RESPONSIVE (MÓVIL) --- */
+@media (max-width: 768px) {
+    .modo-minimapa {
+        width: 120px; /* Un poco más pequeño para móvil */
+        height: 120px;
+        /* 🚨 SÓLO AQUÍ SUBE PARA LIBRAR LA BARRA */
+        bottom: 115px; 
+        right: 15px;
+        border-width: 2px;
+    }
+
+    .modo-panel {
+        width: 100%;
+        height: 70vh;
+    }
+}

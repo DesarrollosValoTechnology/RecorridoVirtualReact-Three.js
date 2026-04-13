@@ -72,6 +72,7 @@ function App() {
         setNodoActual
     } = useTourStore();
 
+
     const controlsRef = useRef<any>(null);
     // 3. Estado para controlar cuándo arranca la rotación inicial
     const [introTerminada, setIntroTerminada] = useState(false);

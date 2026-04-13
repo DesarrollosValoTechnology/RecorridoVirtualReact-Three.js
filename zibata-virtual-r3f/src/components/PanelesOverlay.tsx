@@ -5,6 +5,7 @@ import { nodosTour } from '../data/nodos';
 import { abrirMapaInteractivo } from '../utils/mapaRadar';
 import FormularioContacto from './FormularioContacto';
 import { diccionario } from '../data/diccionario';
+import MapaBase from './MapaBase';
 
 export default function PanelesOverlay() {
     const store = useTourStore();
@@ -90,7 +91,19 @@ export default function PanelesOverlay() {
                 <div className="panel-contenido map-container" onClick={(e) => e.stopPropagation()}>
                     <button className="btn-cerrar-panel" onClick={cerrarPanel}>✖</button>
                     <h2 className="form-title">{t["UI_MAPA_TITULO"]}</h2>
-                    <p style={{ color: '#ccc' }}>{t["UI_MAPA_PROXIMAMENTE"]}</p>
+                    
+                    {/* 🚨 ADIÓS AL "PRÓXIMAMENTE", HOLA MAPA INTERACTIVO */}
+                    <div style={{ 
+                        width: '100%', 
+                        height: '65vh', /* Le damos una buena altura para que se vea en grande */
+                        position: 'relative', 
+                        overflow: 'hidden', 
+                        borderRadius: '12px',
+                        marginTop: '15px'
+                    }}>
+                        {/* Solo lo renderizamos si el panel está abierto para ahorrar memoria */}
+                        {store.panelActivo === 'mapa' && <MapaBase esMinimapa={false} />}
+                    </div>
                 </div>
             </div>
 

@@ -4,6 +4,13 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useTourStore } from '../store/useTourStore';
 
+// 🚨 SOLUCIÓN PUNTO 3: Creamos el "molde" exacto de OrbitControls
+// Así TypeScript sabe perfectamente qué herramientas tiene disponibles
+interface IOrbitControls {
+    target: THREE.Vector3;
+    update: () => void;
+}
+
 export default function IntroAnimacion() {
     const { camera, controls } = useThree();
     const isTransitioning = useTourStore(state => state.isTransitioning);
@@ -12,7 +19,6 @@ export default function IntroAnimacion() {
     const pseudoTarget = useRef(new THREE.Vector3(0, 0, 0));
 
     useEffect(() => {
-        // Posición inicial del Tiny Planet
         camera.position.set(-1, 250, 0);
         (camera as THREE.PerspectiveCamera).fov = 140;
         camera.updateProjectionMatrix();
@@ -23,37 +29,44 @@ export default function IntroAnimacion() {
 
         const cam = camera as THREE.PerspectiveCamera;
 
-        // Aceleración de la caída
+        // 🚨 EL ANTÍDOTO: Normalizamos el delta basado en 60 FPS
+        // Si el monitor va a 60hz, ajusteFPS será 1. 
+        // Si va a 144hz, será 0.4. Si va a 30hz, será 2.
+        const ajusteFPS = delta * 60;
+
+        // Multiplicamos nuestra aceleración por el ajuste
         if (velocidadCaida.current < 0.004) {
-            velocidadCaida.current += 0.00003; 
+            velocidadCaida.current += 0.00003 * ajusteFPS; 
         }
 
-        // 1. Mirada: Se desplaza suavemente hacia el horizonte (Eje X)
-        pseudoTarget.current.lerp(new THREE.Vector3(100, 0, 0), velocidadCaida.current);
-        
-        // 2. Posición: Desciende hacia el centro de la escena
-        cam.position.lerp(new THREE.Vector3(0, 0, 0.1), velocidadCaida.current);
-        cam.lookAt(pseudoTarget.current);
+        // Multiplicamos la fuerza del Lerp (Interpolación) por el ajuste
+        const lerpFactor = velocidadCaida.current * ajusteFPS;
 
-        // 3. Zoom: El FOV pasa de 140 a 75
-        let velocidadZoom = velocidadCaida.current * 2;
+        pseudoTarget.current.lerp(new THREE.Vector3(100, 0, 0), lerpFactor);
+        cam.position.lerp(new THREE.Vector3(0, 0, 0.1), lerpFactor);
+
+        let velocidadZoom = velocidadCaida.current * 2 * ajusteFPS;
         if (Math.abs(cam.fov - 75) > 0.01) {
             cam.fov += (75 - cam.fov) * velocidadZoom;
             cam.updateProjectionMatrix();
         }
 
-        // Sincronizar OrbitControls
-        if (controls) {
-            (controls as any).target.copy(pseudoTarget.current);
-            (controls as any).update();
+        const ctrl = controls as unknown as IOrbitControls;
+        
+        if (ctrl && ctrl.target) {
+            ctrl.target.copy(pseudoTarget.current);
+            ctrl.update();
+        } else {
+            cam.lookAt(pseudoTarget.current);
         }
     });
 
-    // Asegurar el último frame perfecto al terminar la transición
     useEffect(() => {
-        if (!isTransitioning && controls) {
-            (controls as any).target.copy(pseudoTarget.current);
-            (controls as any).update();
+        const ctrl = controls as unknown as IOrbitControls;
+        
+        if (!isTransitioning && ctrl && ctrl.target) {
+            ctrl.target.copy(pseudoTarget.current);
+            ctrl.update();
         }
     }, [isTransitioning, controls]);
 

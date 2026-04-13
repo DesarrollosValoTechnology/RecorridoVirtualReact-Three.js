@@ -5,6 +5,7 @@ import { nodosTour } from '../data/nodos';
 import SocialBar from './SocialBar';
 import { xrStore } from '../store/xrStore';
 import { diccionario } from '../data/diccionario'; // 🚨 IMPORTAMOS DICCIONARIO
+import MapaBase from './MapaBase'; // 🚨 IMPORTAMOS EL MAPA
 
 export default function OverlayUI() {
     const store = useTourStore();
@@ -135,6 +136,8 @@ export default function OverlayUI() {
                     <span>{t["UI_BTN_MAPA"]}</span>
                 </button>
             </div>
+            {/* 🚨 5. NUESTRO MINIMAPA GTA FLOTANTE */}
+            <MapaBase esMinimapa={true} />
         </div>
     );
 }
