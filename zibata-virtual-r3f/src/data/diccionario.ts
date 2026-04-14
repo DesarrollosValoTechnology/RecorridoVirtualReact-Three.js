@@ -87,3 +87,5 @@ export const diccionario: Record<string, Record<string, string>> = {
         "UI_MAPA_PLANO": "Map",
     }
 };
+
+/* Hay que agregar la documentación de los diferentes keys */

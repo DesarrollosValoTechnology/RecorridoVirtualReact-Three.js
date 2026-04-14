@@ -100,6 +100,9 @@ export const nodosTour: INodosTour = {
         archivo: "/Assets/foto_jamadi.jpg", 
         lat: 20.677500,
         lng: -100.335400,
+                    // 🚨 LO NUEVO PARA EL PLANO:
+        mapaX: 42.5, // Porcentaje de izquierda a derecha
+        mapaY: 79.25, // Porcentaje de arriba hacia abajo
         ui: {
             categoria: "Amenidades",
             titulo: "Parque Jamadi",
@@ -214,3 +217,4 @@ export const nodosTour: INodosTour = {
         ]
     }
 };
+
