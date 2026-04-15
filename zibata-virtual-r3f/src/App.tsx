@@ -13,6 +13,7 @@ import PantallaCarga from './components/PantallaCarga';
 import IntroAnimacion from './components/IntroAnimacion';
 import { actualizarMinimapaFrame, moverMapaANodo } from './utils/mapaRadar';
 import AdminNuevoNodo from './components/AdminMode';
+import AdminSidebar from './components/AdminSidebar';
 
 // 🚨 1. ADIÓS AL ARCHIVO ESTÁTICO:
 // import { nodosTour } from './data/nodos'; 
@@ -79,6 +80,7 @@ function App() {
     // 🚨 LA RUTA SECRETA
     const params = new URLSearchParams(window.location.search);
     const isAdmin = params.get('admin') === 'true';
+    const { adminPanelActivo } = useTourStore(); // Traemos el estado actual
 
     // 🚨 3. EL DISPARADOR DE SUPABASE
     // Se ejecuta una sola vez al abrir la página
@@ -158,6 +160,7 @@ function App() {
             clearTimeout(temporizadorInactividad);
         };
     }, []);
+    
 
     // 🚨 6. PANTALLA DE CARGA PREVIA PARA EVITAR ERRORES 3D
     if (cargandoNodos) {
@@ -176,9 +179,21 @@ function App() {
     return (
         <div style={{ width: '100vw', height: '100vh', backgroundColor: '#000', position: 'relative', overflow: 'hidden' }}>
             
-            {/* Si en la URL escriben ?admin=true, mostramos el formulario */}
-            {isAdmin && <AdminNuevoNodo />}
-            
+            {/* --- MODO EDITOR UI --- */}
+            {isAdmin && (
+                <>
+                    <AdminSidebar />
+                    {adminPanelActivo === 'nuevoNodo' && <AdminNuevoNodo />}
+                    
+                    {adminPanelActivo === 'editorHotspots' && (
+                        <div style={{ position: 'absolute', top: 20, left: 100, color: 'white', zIndex: 9999, background: 'rgba(0,0,0,0.8)', padding: '10px 20px', borderRadius: '8px' }}>
+                            🎯 Modo de Edición 3D Activado (Próximamente)
+                        </div>
+                    )}
+                </>
+            )}
+            {/* ---------------------- */}
+
             <PantallaCarga />
             <OverlayUI />
             <PanelesOverlay />

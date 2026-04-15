@@ -1,8 +1,10 @@
 //src/components/AdminMode
 import { useState } from 'react';
 import { supabase } from '../supabase/client';
+import { useTourStore } from '../store/useTourStore';
 
 export default function AdminMode() {
+    const { setAdminPanelActivo } = useTourStore();
     const [cargando, setCargando] = useState(false);
     const [mensaje, setMensaje] = useState('');
     
@@ -91,6 +93,17 @@ export default function AdminMode() {
             padding: '30px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)',
             width: '400px', zIndex: 99999, color: 'white', fontFamily: 'sans-serif'
         }}>
+            {/* Botón de Cerrar */}
+        <button 
+            onClick={() => setAdminPanelActivo(null)}
+            style={{
+                position: 'absolute', top: '15px', right: '15px',
+                background: 'transparent', border: 'none', color: '#888',
+                fontSize: '18px', cursor: 'pointer'
+            }}
+        >
+            ✖
+        </button>
             <h2 style={{ marginTop: 0, marginBottom: '20px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>
                 🏗️ Crear Nuevo Nodo
             </h2>
@@ -154,5 +167,6 @@ export default function AdminMode() {
                 </div>
             )}
         </div>
+        
     );
 }

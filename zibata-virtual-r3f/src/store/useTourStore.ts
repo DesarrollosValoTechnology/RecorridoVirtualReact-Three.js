@@ -42,9 +42,16 @@ interface TourState {
     
     tooltipHover: { titulo: string, miniatura: string, x: number, y: number } | null;
     setTooltipHover: (data: any) => void;
+
+    adminPanelActivo: 'nuevoNodo' | 'editorHotspots' | null;
+    setAdminPanelActivo: (panel: 'nuevoNodo' | 'editorHotspots' | null) => void;
 }
 
 export const useTourStore = create<TourState>((set, get) => ({
+
+    // Dentro de tu store (create):
+    adminPanelActivo: null,
+    setAdminPanelActivo: (panel) => set({ adminPanelActivo: panel }),
     nodoActual: getInitialNode(),
     
     isTransitioning: false,
