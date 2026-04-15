@@ -15,8 +15,8 @@ import { actualizarMinimapaFrame, moverMapaANodo } from './utils/mapaRadar';
 import AdminNuevoNodo from './components/AdminMode';
 import AdminSidebar from './components/AdminSidebar';
 import PanelEditorHotspots from './components/PanelEditorHotspots';
-import PanelInspector from './components/PanelInspector';
 import PanelEditarNodo from './components/PanelEditarNodo';
+import PanelEditorLabels from './components/PanelEditorLabels';
 
 // 🚨 1. ADIÓS AL ARCHIVO ESTÁTICO:
 // import { nodosTour } from './data/nodos'; 
@@ -203,7 +203,6 @@ useEffect(() => {
         {adminPanelActivo === 'editorHotspots' && (
             <>
                 <PanelEditorHotspots />
-                <PanelInspector />
                 </>
             )}
         {adminPanelActivo === 'editarNodo' && <PanelEditarNodo />} 

@@ -4,7 +4,6 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Html, Line } from '@react-three/drei';
 import { useTourStore } from '../store/useTourStore'; 
-import { diccionario } from '../data/diccionario'; 
 
 export default function Label({ datos }: any) {
     const { camera } = useThree();
@@ -13,6 +12,19 @@ export default function Label({ datos }: any) {
     const htmlDivRef = useRef<HTMLDivElement>(null!);
     const groupRef = useRef<THREE.Group>(null!);
     const lineRef = useRef<any>(null!);
+
+    // ==========================================
+    // 🌍 LÓGICA DE IDIOMA (FALLBACK)
+    // ==========================================
+    const textoMostrado = useMemo(() => {
+        if (idiomaActual === 'en') {
+            // Si piden inglés, intenta inglés primero. Si está vacío, usa español.
+            return datos.texto_en || datos.texto_es || 'Etiqueta sin texto';
+        } else {
+            // Si piden español, intenta español primero. Si está vacío, usa inglés.
+            return datos.texto_es || datos.texto_en || 'Etiqueta sin texto';
+        }
+    }, [idiomaActual, datos.texto_es, datos.texto_en]);
 
     // 1. Calculamos la posición del objetivo (donde apunta el palito)
     const posTargetReal = useMemo(() => 
@@ -82,7 +94,8 @@ export default function Label({ datos }: any) {
             <group ref={groupRef} position={posInicialEtiqueta}>
                 <Html center zIndexRange={[100, 0]} style={{ transformOrigin: 'center center', pointerEvents: 'none' }}>
                     <div ref={htmlDivRef} className="texto-informativo" style={{ transformOrigin: 'center center' }}>
-                        {diccionario[idiomaActual]?.[datos.texto] || datos.texto}
+                        {/* 🎯 Imprimimos la variable calculada arriba */}
+                        {textoMostrado}
                     </div>
                 </Html>
             </group>

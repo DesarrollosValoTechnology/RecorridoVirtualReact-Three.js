@@ -35,8 +35,9 @@ interface TourState {
     cargarNodo: (id: string) => void;
     tooltipHover: { titulo: string, miniatura: string, x: number, y: number } | null;
     setTooltipHover: (data: any) => void;
-    adminPanelActivo: 'nuevoNodo' | 'editorHotspots' | 'editarNodo' | null;
-    setAdminPanelActivo: (panel: 'nuevoNodo' | 'editorHotspots' | 'editarNodo' | null) => void;
+    adminPanelActivo: 'nuevoNodo' | 'editorHotspots' | 'editarNodo' | 'editorLabels' | null;
+    setAdminPanelActivo: (panel: 'nuevoNodo' | 'editorHotspots' | 'editarNodo' | 'editorLabels' | null) => void;
+    actualizarPosicionLabel: (id: string, x: number, y: number, z: number) => Promise<void>;
     actualizarNodoActual: (cambios: any) => Promise<void>;
     actualizarPosicionHotspot: (id: string, x: number, y: number, z: number) => Promise<void>;
     crearNuevoHotspot: () => Promise<void>;
@@ -44,6 +45,11 @@ interface TourState {
     setHotspotSeleccionadoId: (id: string | null) => void;
     actualizarPropiedadesHotspot: (id: string, destino: string, tipo: string) => Promise<void>;
     borrarHotspot: (id: string) => Promise<void>;
+    labelSeleccionadoId: string | null;
+    setLabelSeleccionadoId: (id: string | null) => void;
+    crearNuevoLabel: () => Promise<void>;
+    actualizarPropiedadesLabel: (id: string, campo: string, valor: any) => Promise<void>;
+    borrarLabel: (id: string) => Promise<void>;
 }
 
 export const useTourStore = create<TourState>((set, get) => ({
@@ -222,5 +228,69 @@ export const useTourStore = create<TourState>((set, get) => ({
 
         set({ isTransitioning: true, fadeActivo: true, menuAbierto: false, panelActivo: null });
         setTimeout(() => set({ nodoActual: id }), 500);
+    },
+    labelSeleccionadoId: null,
+
+    setLabelSeleccionadoId: (id) => set({ labelSeleccionadoId: id }),
+
+    crearNuevoLabel: async () => {
+        const { nodoActual, cargarNodos } = get();
+        // Posición inicial frente a la cámara
+        const nuevoLabel = {
+            nodo_id: nodoActual,
+            texto_es: 'Nueva Etiqueta',
+            texto_en: 'New Label',
+            x: 0, y: 0, z: -5,
+            offset_y: 120
+        };
+
+        const { error } = await supabase.from('labels').insert([nuevoLabel]);
+        if (!error) await cargarNodos();
+    },
+
+    actualizarPropiedadesLabel: async (id, campo, valor) => {
+        // 1. Actualización Optimista (Local)
+        const { nodos, nodoActual } = get();
+        const nuevosNodos = { ...nodos };
+        const label = nuevosNodos[nodoActual].labels.find((l: any) => l.id === id);
+        
+        if (label) {
+            if (campo === 'offset_y') {
+                label.offset = { ...label.offset, y: valor };
+            } else {
+                label[campo] = valor;
+            }
+        }
+        set({ nodos: nuevosNodos });
+
+        // 2. Actualización en Nube
+        const columnMap: any = { 'offset_y': 'offset_y', 'texto_es': 'texto_es', 'texto_en': 'texto_en' };
+        await supabase.from('labels').update({ [columnMap[campo] || campo]: valor }).eq('id', id);
+    },
+
+    borrarLabel: async (id) => {
+        const { cargarNodos } = get();
+        const { error } = await supabase.from('labels').delete().eq('id', id);
+        if (!error) {
+            set({ labelSeleccionadoId: null });
+            await cargarNodos();
+        }
+    },
+    // --- AGREGA ESTA FUNCIÓN EN EL CUERPO DEL STORE ---
+    actualizarPosicionLabel: async (id, x, y, z) => {
+        const { nodos, nodoActual } = get();
+        const nuevosNodos = { ...nodos };
+        const label = nuevosNodos[nodoActual].labels.find((l: any) => l.id === id);
+
+        if (label) {
+            // Actualización optimista local 
+            // (Usamos .target porque así lo definiste en tu función cargarNodos)
+            label.target = { x, y, z };
+            set({ nodos: nuevosNodos });
+        }
+
+        // Actualización en Supabase
+        const { error } = await supabase.from('labels').update({ x, y, z }).eq('id', id);
+        if (error) console.error("Error al guardar posición del label:", error);
     },
 }));
