@@ -1,14 +1,14 @@
 // src/components/Escena360.tsx
 import { useEffect, useRef } from 'react';
 import { useTourStore } from '../store/useTourStore';
-import { nodosTour } from '../data/nodos';
+// 🚨 1. ADIÓS al archivo estático:
+// import { nodosTour } from '../data/nodos'; 
 import Hotspot from './Hotspot'; 
 import Label from './Label';
 import EsferaProgresiva from './EsferaProgresiva'; 
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three'; 
 
-// 🚨 1. Ahora el espía recibe el offset (en grados) que pones en nodos.ts
 function SincronizadorMinimapa({ offsetGrados = 0 }: { offsetGrados: number }) {
     const { camera } = useThree();
     
@@ -28,12 +28,8 @@ function SincronizadorMinimapa({ offsetGrados = 0 }: { offsetGrados: number }) {
         rotacionAcumulada.current += delta;
         rotacionAnterior.current = rotacionActual;
 
-        // 🚨 2. LA MAGIA DE LA CALIBRACIÓN: 
-        // Convertimos tus grados de nodos.ts a radianes y se lo sumamos a la brújula
         const offsetRadianes = offsetGrados * (Math.PI / 180);
         
-        // NOTA: Si ves que gira al revés (cuando vas a la derecha el mapa va a la izq), 
-        // ponle un signo menos al rotacionAcumulada.current
         const rotacionFinal = rotacionAcumulada.current + offsetRadianes;
 
         document.documentElement.style.setProperty('--rotacion-gta', `${rotacionFinal}rad`);
@@ -43,12 +39,17 @@ function SincronizadorMinimapa({ offsetGrados = 0 }: { offsetGrados: number }) {
 }
 
 export default function Escena360() {
-    const nodoActual = useTourStore((state) => state.nodoActual);
-    const setFadeActivo = useTourStore((state) => state.setFadeActivo);
-    const setIsTransitioning = useTourStore((state) => state.setIsTransitioning);
-    const mostrar = useTourStore(state => state.mostrarElementos3D);
+    // 🚨 2. Extraemos 'nodos' directamente de la nube mediante tu store
+    const { 
+        nodoActual, 
+        nodos, 
+        setFadeActivo, 
+        setIsTransitioning, 
+        mostrarElementos3D 
+    } = useTourStore();
 
-    const infoNodo = nodosTour[nodoActual];
+    // 🚨 3. Leemos la info del nodo desde el objeto dinámico
+    const infoNodo = nodos[nodoActual];
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -58,9 +59,11 @@ export default function Escena360() {
         return () => clearTimeout(timer);
     }, [nodoActual, setFadeActivo, setIsTransitioning]);
 
+    // 🚨 PROTECCIÓN: Si la BD aún está procesando o el nodo no existe, no intentamos dibujar nada 3D para evitar crasheos
+    if (!infoNodo) return null;
+
     return (
         <group>
-            {/* 🚨 3. Le pasamos el valor de calibración al espía */}
             <SincronizadorMinimapa offsetGrados={infoNodo.norteOffset || 0} />
 
             <EsferaProgresiva 
@@ -68,11 +71,11 @@ export default function Escena360() {
                 rutaAltaRes={infoNodo.archivo} 
             />
 
-            {mostrar && infoNodo.hotspots?.map((hotspot, index) => (
+            {mostrarElementos3D && infoNodo.hotspots?.map((hotspot: any, index: number) => (
                 <Hotspot key={`hotspot-${index}`} datos={hotspot} />
             ))}
 
-            {mostrar && infoNodo.labels?.map((label, index) => (
+            {mostrarElementos3D && infoNodo.labels?.map((label: any, index: number) => (
                 <Label key={`label-${index}`} datos={label} />
             ))}
         </group>

@@ -12,18 +12,17 @@ import FadeOverlay from './components/Fadeoverlay';
 import PantallaCarga from './components/PantallaCarga';
 import IntroAnimacion from './components/IntroAnimacion';
 import { actualizarMinimapaFrame, moverMapaANodo } from './utils/mapaRadar';
-import { nodosTour } from './data/nodos';
+// 🚨 1. ADIÓS AL ARCHIVO ESTÁTICO:
+// import { nodosTour } from './data/nodos'; 
 import ControlZoomFOV from './components/ControlZoomFOV';
 import TooltipPreview from './components/TooltipPreview';
 
-// 🚨 Ahora le exigimos que reciba controlsRef como parámetro
 function SincronizadorRadar({ controlsRef }: { controlsRef: any }) {
     const { camera } = useThree();
     const nodoActual = useTourStore(state => state.nodoActual);
     const panelActivo = useTourStore(state => state.panelActivo);
 
     useFrame(() => {
-        // 🚨 Solo actualizamos si el panel está abierto Y los controles ya existen
         if (panelActivo === 'ubicacion' && controlsRef.current) {
             actualizarMinimapaFrame(camera, controlsRef.current, nodoActual); 
         }
@@ -32,7 +31,6 @@ function SincronizadorRadar({ controlsRef }: { controlsRef: any }) {
     return null; 
 }
 
-// ESPÍA DE ROTACIÓN
 function ControladorRotacion({ controlsRef, introTerminada }: { controlsRef: any, introTerminada: boolean }) {
     const { userQuiereRotacion, isTransitioning, menuAbierto, panelActivo } = useTourStore();
 
@@ -41,7 +39,6 @@ function ControladorRotacion({ controlsRef, introTerminada }: { controlsRef: any
             const isHovering = document.body.classList.contains('sobre-hotspot');
             const isInteractuando = document.body.classList.contains('pausa-inactividad');
 
-            // 1. Agregamos "introTerminada" a las reglas para que el Tiny Planet se quede quieto
             const debeRotar = introTerminada && 
                               userQuiereRotacion && 
                               !isTransitioning && 
@@ -51,8 +48,6 @@ function ControladorRotacion({ controlsRef, introTerminada }: { controlsRef: any
                               !isHovering;
 
             controlsRef.current.autoRotate = debeRotar;
-            
-            // 2. ¡Bajamos la velocidad de 0.5 a 0.15 para que sea un paneo elegante!
             controlsRef.current.autoRotateSpeed = 0.15; 
         }
     });
@@ -69,24 +64,39 @@ function App() {
         menuAbierto,
         panelActivo,
         nodoActual,
-        setNodoActual
+        setNodoActual,
+        // 🚨 2. TRAEMOS LAS VARIABLES DE SUPABASE
+        cargarNodos,
+        cargandoNodos,
+        nodos
     } = useTourStore();
 
-
     const controlsRef = useRef<any>(null);
-    // 3. Estado para controlar cuándo arranca la rotación inicial
     const [introTerminada, setIntroTerminada] = useState(false);
 
+    // 🚨 3. EL DISPARADOR DE SUPABASE
+    // Se ejecuta una sola vez al abrir la página
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const nodoCompartido = params.get('nodo');
-        if (nodoCompartido && (nodosTour as any)[nodoCompartido]) {
-            setNodoActual(nodoCompartido);
+        cargarNodos();
+    }, [cargarNodos]);
+
+    // 🚨 4. ACTUALIZAMOS LA LECTURA DE URL COMPARTIDA
+    useEffect(() => {
+        // Solo ejecutamos esto si YA terminamos de cargar los nodos de la BD
+        if (!cargandoNodos && Object.keys(nodos).length > 0) {
+            const params = new URLSearchParams(window.location.search);
+            const nodoCompartido = params.get('nodo');
+            if (nodoCompartido && nodos[nodoCompartido]) {
+                setNodoActual(nodoCompartido);
+            }
         }
-    }, [setNodoActual]);
+    }, [cargandoNodos, nodos, setNodoActual]);
 
     // EFECTO: Caída Cinematográfica (Intro)
     useEffect(() => {
+        // Si seguimos descargando datos, no empezamos la intro todavía
+        if (cargandoNodos) return;
+
         const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
         async function iniciarSecuencia() {
             await sleep(2000);
@@ -100,25 +110,24 @@ function App() {
             await sleep(2000);
             setIsTransitioning(false);
             
-            // 4. Al terminar la caída (segundo 15), le damos permiso a la cámara de rotar
             setIntroTerminada(true);
         }
         iniciarSecuencia();
-    }, [setLogoVisible, setFadeActivo, setIsTransitioning, setMostrarElementos3D]);
+    }, [cargandoNodos, setLogoVisible, setFadeActivo, setIsTransitioning, setMostrarElementos3D]);
 
+    // 🚨 5. ACTUALIZAMOS EL MINIMAPA PARA QUE LEA DE LA BD
     useEffect(() => {
-        const info = (nodosTour as any)[nodoActual];
-        if (info && info.lat && info.lng) {
-            moverMapaANodo(info.lat, info.lng);
+        const info = nodos[nodoActual];
+        if (info && info.mapaX && info.mapaY) { // Usamos mapaX y mapaY como lo definimos en el traductor
+            moverMapaANodo(info.mapaX, info.mapaY);
         }
-    }, [nodoActual]);
+    }, [nodoActual, nodos]);
 
-    // EFECTO: TEMPORIZADOR DE INACTIVIDAD (5 SEGUNDOS)
+    // EFECTO: TEMPORIZADOR DE INACTIVIDAD
     useEffect(() => {
         let temporizadorInactividad: ReturnType<typeof setTimeout>;
 
         const reiniciarTemporizador = (e: Event) => {
-            // 5. IGNORAR LA UI: Si haces clic en un botón (como el de autorotate), ignora el temporizador
             const target = e.target as HTMLElement;
             if (target && target.closest('button, .panel-contenido, .herramientas-pill, .ui-bottom-bar-pill')) {
                 return;
@@ -144,6 +153,20 @@ function App() {
         };
     }, []);
 
+    // 🚨 6. PANTALLA DE CARGA PREVIA PARA EVITAR ERRORES 3D
+    if (cargandoNodos) {
+        return (
+            <div style={{ width: '100vw', height: '100vh', backgroundColor: '#000', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                {/* Puedes poner tu logo de Supraterra o Raycast aquí mientras carga la BD */}
+                <h2 style={{ color: 'white', fontFamily: 'sans-serif' }}>Conectando servidor...</h2>
+            </div>
+        );
+    }
+
+    if (Object.keys(nodos).length === 0) {
+        return <div style={{ color: 'white' }}>Error: No se encontraron escenas en la base de datos.</div>;
+    }
+
     return (
         <div style={{ width: '100vw', height: '100vh', backgroundColor: '#000', position: 'relative', overflow: 'hidden' }}>
             
@@ -153,36 +176,13 @@ function App() {
             <FadeOverlay />
             <TooltipPreview />
 
-            {/* =========================================
-                🎯 CROSSHAIR DE CALIBRACIÓN (Centro 3D) 🎯
-               ========================================= 
-            <div style={{
-                position: 'absolute',
-                top: '50%', 
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                zIndex: 9999, // Debe estar por encima del Canvas para ser visible
-                pointerEvents: 'none', // Permite interactuar con la escena a través de él
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-            }}>
-                <div style={{ width: '4px', height: '4px', backgroundColor: 'white', borderRadius: '50%', boxShadow: '0 0 4px rgba(0,0,0,0.8)' }}></div>
-                <div style={{ position: 'absolute', top: '-15px', width: '2px', height: '10px', backgroundColor: 'white', boxShadow: '0 0 4px rgba(0,0,0,0.8)' }}></div>
-                <div style={{ position: 'absolute', bottom: '-15px', width: '2px', height: '10px', backgroundColor: 'white', boxShadow: '0 0 4px rgba(0,0,0,0.8)' }}></div>
-                <div style={{ position: 'absolute', left: '-15px', width: '10px', height: '2px', backgroundColor: 'white', boxShadow: '0 0 4px rgba(0,0,0,0.8)' }}></div>
-                <div style={{ position: 'absolute', right: '-15px', width: '10px', height: '2px', backgroundColor: 'white', boxShadow: '0 0 4px rgba(0,0,0,0.8)' }}></div>
-            </div> */}
-
             <Canvas
-                // 🚨 Cambiamos -1 por -0.001 y Z por 0.001
                 camera={{ position: [-0.001, 250, 0.001], fov: 140 }}
                 style={{ position: 'absolute', top: 0, left: 0 }}
             >
                 <XR store={xrStore}>
                     <IntroAnimacion />
                     
-                    {/* 🚨 AQUÍ ESTÁ LA CORRECCIÓN PRINCIPAL: Le pasamos el controlsRef */}
                     <SincronizadorRadar controlsRef={controlsRef} />
 
                     <ControladorRotacion controlsRef={controlsRef} introTerminada={introTerminada} />
