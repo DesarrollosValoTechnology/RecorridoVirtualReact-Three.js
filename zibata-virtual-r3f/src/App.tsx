@@ -12,6 +12,8 @@ import FadeOverlay from './components/Fadeoverlay';
 import PantallaCarga from './components/PantallaCarga';
 import IntroAnimacion from './components/IntroAnimacion';
 import { actualizarMinimapaFrame, moverMapaANodo } from './utils/mapaRadar';
+import AdminNuevoNodo from './components/AdminMode';
+
 // 🚨 1. ADIÓS AL ARCHIVO ESTÁTICO:
 // import { nodosTour } from './data/nodos'; 
 import ControlZoomFOV from './components/ControlZoomFOV';
@@ -73,6 +75,10 @@ function App() {
 
     const controlsRef = useRef<any>(null);
     const [introTerminada, setIntroTerminada] = useState(false);
+
+    // 🚨 LA RUTA SECRETA
+    const params = new URLSearchParams(window.location.search);
+    const isAdmin = params.get('admin') === 'true';
 
     // 🚨 3. EL DISPARADOR DE SUPABASE
     // Se ejecuta una sola vez al abrir la página
@@ -169,6 +175,9 @@ function App() {
 
     return (
         <div style={{ width: '100vw', height: '100vh', backgroundColor: '#000', position: 'relative', overflow: 'hidden' }}>
+            
+            {/* Si en la URL escriben ?admin=true, mostramos el formulario */}
+            {isAdmin && <AdminNuevoNodo />}
             
             <PantallaCarga />
             <OverlayUI />
