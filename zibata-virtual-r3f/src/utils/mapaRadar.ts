@@ -1,9 +1,9 @@
 // src/utils/mapaRadar.ts
-import { nodosTour } from '../data/nodos';
 import { useTourStore } from '../store/useTourStore';
 
 let mapaSat: any = null;
 let mapProjectionOverlay: any = null;
+// Coordenadas iniciales por defecto (Zibatá, Querétaro)
 let coordActuales = { lat: 20.676716, lng: -100.335424 };
 
 const ICONOS: Record<string, string> = {
@@ -14,6 +14,13 @@ const ICONOS: Record<string, string> = {
 };
 
 export function abrirMapaInteractivo() {
+    // Sincronizamos coordenadas con el nodo actual antes de abrir
+    const store = useTourStore.getState();
+    const info = store.nodos[store.nodoActual];
+    if (info && info.lat && info.lng) {
+        coordActuales = { lat: Number(info.lat), lng: Number(info.lng) };
+    }
+
     setTimeout(() => {
         if (!mapaSat) {
             const estiloOscuro = [
@@ -28,7 +35,7 @@ export function abrirMapaInteractivo() {
 
             mapaSat = new (window as any).google.maps.Map(document.getElementById('mapa-satelital'), {
                 center: { lat: coordActuales.lat, lng: coordActuales.lng },
-                zoom: 17,
+                zoom: 18,
                 disableDefaultUI: true,
                 gestureHandling: 'greedy',
                 mapTypeId: 'satellite'
@@ -75,10 +82,10 @@ export function abrirMapaInteractivo() {
 
 export function moverMapaANodo(lat: number, lng: number) {
     if (lat && lng) {
-        coordActuales = { lat, lng };
+        coordActuales = { lat: Number(lat), lng: Number(lng) };
         if (mapaSat) {
             mapaSat.panTo({ lat: coordActuales.lat, lng: coordActuales.lng });
-            mapaSat.setZoom(17);
+            mapaSat.setZoom(18);
         }
     }
 }
@@ -90,11 +97,17 @@ export function actualizarMinimapaFrame(camera: any, controls: any, nodoActual: 
     const contenedorIconos = document.getElementById('contenedor-iconos-mapa');
 
     const store = useTourStore.getState();
+    const nodosDB = store.nodos; // 🚨 LEEMOS DE LA BD (Zustand)
 
     if (!mapaSat || !contenedorIconos || !camera || !path || !svgParent || !puntoBlanco) return;
     if (!controls || typeof controls.getAzimuthalAngle !== 'function') return;
 
-    if (contenedorIconos.children.length === 0) {
+    // 1. DIBUJAR ICONOS DINÁMICOS
+    // Si la cantidad de iconos no coincide con la base de datos, refrescamos el contenedor
+    if (contenedorIconos.children.length !== Object.keys(nodosDB).length) {
+        contenedorIconos.innerHTML = '';
+        
+        // Inyectamos CSS si no existe
         if (!document.getElementById('radar-css-fix')) {
             const style = document.createElement('style');
             style.id = 'radar-css-fix';
@@ -106,8 +119,7 @@ export function actualizarMinimapaFrame(camera: any, controls: any, nodoActual: 
                 .icon-mapa:hover { transform: translate(-50%, -50%) scale(1.15); z-index: 20; }
                 .icon-mapa.active { z-index: 30; }
                 .icon-mapa.active svg circle:first-child { fill: #5cb82a !important; stroke: #fff !important; }
-                .icon-mapa::before,
-                .icon-mapa::after {
+                .icon-mapa::before, .icon-mapa::after {
                     content: ''; position: absolute; top: 50%; left: 50%;
                     transform: translate(-50%, -50%); border-radius: 50%;
                     border: solid rgba(255, 255, 255, 0.7); 
@@ -115,8 +127,6 @@ export function actualizarMinimapaFrame(camera: any, controls: any, nodoActual: 
                     pointer-events: none; z-index: -1; box-sizing: content-box;
                 }
                 .icon-mapa::after { animation-delay: 1s; }
-                .icon-mapa.active::before,
-                .icon-mapa.active::after { border-color: rgba(92, 184, 42, 0.9); }
                 @keyframes radar-ping {
                     0% { width: 100%; height: 100%; opacity: 1; border-width: 4px; }
                     100% { width: 350%; height: 350%; opacity: 0; border-width: 1px; }
@@ -125,38 +135,30 @@ export function actualizarMinimapaFrame(camera: any, controls: any, nodoActual: 
             document.head.appendChild(style);
         }
 
-        for (const [id, info] of Object.entries(nodosTour) as [string, any][]) {
+        for (const [id, info] of Object.entries(nodosDB) as [string, any][]) {
             if (info.lat && info.lng) {
                 const divIcono = document.createElement('div');
                 divIcono.id = `map-icon-${id}`;
-                const tipo = (info.hotspots && info.hotspots.length > 0 && info.hotspots[0].tipo) ? info.hotspots[0].tipo : 'pasos';
+                const tipo = info.hotspots?.[0]?.tipo || 'pasos';
                 divIcono.className = `icon-mapa ${tipo}`;
                 divIcono.innerHTML = ICONOS[tipo] || ICONOS['pasos'];
 
                 divIcono.addEventListener('mousemove', (e) => {
-                    if (info.ui) {
-                        store.setTooltipHover({
-                            titulo: info.ui.titulo,
-                            miniatura: info.ui.miniatura,
-                            x: e.clientX,
-                            y: e.clientY
-                        });
-                    }
+                    store.setTooltipHover({
+                        titulo: info.ui.titulo,
+                        miniatura: info.ui.miniatura,
+                        x: e.clientX,
+                        y: e.clientY
+                    });
                 });
 
-                divIcono.addEventListener('mouseleave', () => { 
-                    store.setTooltipHover(null); 
-                });
+                divIcono.addEventListener('mouseleave', () => { store.setTooltipHover(null); });
 
                 divIcono.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    store.setTooltipHover(null);
-                    
-                    // 🚨 CORRECCIÓN DEL TELEPORT:
-                    // Si no estamos ya en una transición, cerramos el panel y viajamos al nodo
                     if (!store.isTransitioning) {
-                        store.setPanelActivo(null); // Cerramos el panel del mapa
-                        store.cargarNodo(id);       // Llamamos a la función de carga del Store
+                        store.setPanelActivo(null);
+                        store.cargarNodo(id);
                     }
                 });
                 contenedorIconos.appendChild(divIcono);
@@ -165,10 +167,10 @@ export function actualizarMinimapaFrame(camera: any, controls: any, nodoActual: 
     }
 
     // 2. SINCRONIZAR POSICIONES GEOGRÁFICAS
-    for (const [id, info] of Object.entries(nodosTour) as [string, any][]) {
+    for (const [id, info] of Object.entries(nodosDB) as [string, any][]) {
         const el = document.getElementById(`map-icon-${id}`);
         if (el && info.lat && info.lng && mapProjectionOverlay) {
-            const latLng = new (window as any).google.maps.LatLng(info.lat, info.lng);
+            const latLng = new (window as any).google.maps.LatLng(Number(info.lat), Number(info.lng));
             const pos = mapProjectionOverlay.fromLatLngToContainerPixel(latLng);
             
             if (!pos) continue;
@@ -188,18 +190,17 @@ export function actualizarMinimapaFrame(camera: any, controls: any, nodoActual: 
     }
 
     // 3. ACTUALIZAR APERTURA Y ROTACIÓN DEL CONO SVG
-    const currentZoom = mapaSat.getZoom() || 17;
+    const currentZoom = mapaSat.getZoom() || 18;
     const angleThreejs = controls.getAzimuthalAngle() || 0;
-    const ajusteNorte = (nodosTour as any)[nodoActual]?.norteOffset || 0;
+    const ajusteNorte = nodosDB[nodoActual]?.norteOffset || 0; // 🚨 LEEMOS DE LA BD
     const anguloRadarGrados = - (angleThreejs * (180 / Math.PI)) + ajusteNorte;
-    const escalaFisica = Math.pow(2, currentZoom - 17);
+    const escalaFisica = Math.pow(2, currentZoom - 18);
 
     svgParent.style.transform = `translate(-50%, -50%) rotate(${anguloRadarGrados}deg) scale(${escalaFisica})`;
 
     const aspect = window.innerWidth / window.innerHeight;
     const camFov = camera.fov || 140;
-    const camZoom = camera.zoom || 1;
-    const effectiveFov = camFov / camZoom; 
+    const effectiveFov = camFov / (camera.zoom || 1); 
     let hFov = 2 * Math.atan(Math.tan((effectiveFov * Math.PI) / 360) * aspect) * (180 / Math.PI);
     hFov = Math.max(15, Math.min(hFov, 140));
 

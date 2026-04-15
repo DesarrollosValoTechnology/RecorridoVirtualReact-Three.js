@@ -8,6 +8,7 @@ import Label from './Label';
 import EsferaProgresiva from './EsferaProgresiva'; 
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three'; 
+import HotspotEditable from './HotspotEditable'; 
 
 function SincronizadorMinimapa({ offsetGrados = 0 }: { offsetGrados: number }) {
     const { camera } = useThree();
@@ -45,7 +46,8 @@ export default function Escena360() {
         nodos, 
         setFadeActivo, 
         setIsTransitioning, 
-        mostrarElementos3D 
+        mostrarElementos3D,
+        adminPanelActivo // 👈 AQUÍ ESTÁ LA CORRECCIÓN
     } = useTourStore();
 
     // 🚨 3. Leemos la info del nodo desde el objeto dinámico
@@ -65,16 +67,16 @@ export default function Escena360() {
     return (
         <group>
             <SincronizadorMinimapa offsetGrados={infoNodo.norteOffset || 0} />
+            <EsferaProgresiva rutaBajaRes={infoNodo.archivoBlur || infoNodo.archivo} rutaAltaRes={infoNodo.archivo} />
 
-            <EsferaProgresiva 
-                rutaBajaRes={infoNodo.archivoBlur || infoNodo.archivo} 
-                rutaAltaRes={infoNodo.archivo} 
-            />
-
+            {/* 2. EL SWAP MÁGICO */}
             {mostrarElementos3D && infoNodo.hotspots?.map((hotspot: any, index: number) => (
-                <Hotspot key={`hotspot-${index}`} datos={hotspot} />
+                adminPanelActivo === 'editorHotspots' 
+                    ? <HotspotEditable key={`edit-hs-${index}`} datos={hotspot} />
+                    : <Hotspot key={`hotspot-${index}`} datos={hotspot} />
             ))}
 
+            {/* Los labels siguen igual por ahora */}
             {mostrarElementos3D && infoNodo.labels?.map((label: any, index: number) => (
                 <Label key={`label-${index}`} datos={label} />
             ))}

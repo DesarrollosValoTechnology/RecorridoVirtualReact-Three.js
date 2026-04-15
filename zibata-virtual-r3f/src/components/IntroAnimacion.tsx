@@ -13,31 +13,41 @@ export default function IntroAnimacion() {
     const { camera, controls } = useThree();
     const isTransitioning = useTourStore(state => state.isTransitioning);
     
+    // 🚀 DETECCIÓN DE ADMIN
+    const params = new URLSearchParams(window.location.search);
+    const isAdmin = params.get('admin') === 'true';
+
     const velocidadCaida = useRef(0.00001);
-    // 🚨 CAMBIO 1: Iniciamos el target un poco desplazado en Z
-    // Esto le da a la cámara una "dirección" desde el segundo cero y evita el giro brusco
     const pseudoTarget = useRef(new THREE.Vector3(0, 0, 0.01));
 
     useEffect(() => {
-        // Posicionamos la cámara en lo alto
-        camera.position.set(-0.001, 250, 0.001);
-        (camera as THREE.PerspectiveCamera).fov = 140;
-        camera.updateProjectionMatrix();
-
-        // 🚨 CAMBIO 2: SINCRONIZACIÓN INSTANTÁNEA
-        // Obligamos a los controles y a la cámara a mirar el punto inicial 
-        // ANTES de que empiece el primer frame de la animación.
+        const cam = camera as THREE.PerspectiveCamera;
         const ctrl = controls as unknown as IOrbitControls;
+
+        if (isAdmin) {
+            // 🎯 POSICIÓN INSTANTÁNEA PARA ADMIN
+            cam.position.set(0, 0, 0);
+            cam.fov = 75;
+            pseudoTarget.current.set(0, 0, 50); // Mirando al frente
+        } else {
+            // 🚁 POSICIÓN INICIAL PARA EL TOUR (CIELO)
+            cam.position.set(-0.001, 250, 0.001);
+            cam.fov = 140;
+        }
+
+        cam.updateProjectionMatrix();
+
         if (ctrl && ctrl.target) {
             ctrl.target.copy(pseudoTarget.current);
             ctrl.update();
         } else {
             camera.lookAt(pseudoTarget.current);
         }
-    }, [camera, controls]);
+    }, [camera, controls, isAdmin]);
 
     useFrame((_state, delta) => {
-        if (!isTransitioning) return;
+        // Si no hay transición (o es Admin), no ejecutamos la lógica de caída
+        if (!isTransitioning || isAdmin) return;
 
         const cam = camera as THREE.PerspectiveCamera;
         const ajusteFPS = delta * 60;
@@ -48,10 +58,7 @@ export default function IntroAnimacion() {
 
         const lerpFactor = velocidadCaida.current * ajusteFPS;
 
-        // "Levantamos la cara" hacia el horizonte
         pseudoTarget.current.lerp(new THREE.Vector3(0, 0, 50), lerpFactor);
-        
-        // La cámara cae al centro
         cam.position.lerp(new THREE.Vector3(0, 0, 0), lerpFactor);
 
         let velocidadZoom = velocidadCaida.current * 2 * ajusteFPS;
@@ -61,7 +68,6 @@ export default function IntroAnimacion() {
         }
 
         const ctrl = controls as unknown as IOrbitControls;
-        
         if (ctrl && ctrl.target) {
             ctrl.target.copy(pseudoTarget.current);
             ctrl.update();
@@ -73,6 +79,7 @@ export default function IntroAnimacion() {
     useEffect(() => {
         const ctrl = controls as unknown as IOrbitControls;
         
+        // Finalización de la animación: fijar el target final
         if (!isTransitioning && ctrl && ctrl.target) {
             const direction = new THREE.Vector3();
             camera.getWorldDirection(direction);

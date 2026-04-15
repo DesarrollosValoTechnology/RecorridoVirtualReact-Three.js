@@ -1,31 +1,27 @@
 // src/components/OverlayUI.tsx
 import { useEffect, useState } from 'react';
 import { useTourStore } from '../store/useTourStore';
-import { nodosTour } from '../data/nodos';
 import SocialBar from './SocialBar';
 import { xrStore } from '../store/xrStore';
-import { diccionario } from '../data/diccionario'; // 🚨 IMPORTAMOS DICCIONARIO
-import MapaBase from './MapaBase'; // 🚨 IMPORTAMOS EL MAPA
+import { diccionario } from '../data/diccionario';
+import MapaBase from './MapaBase';
 
 export default function OverlayUI() {
     const store = useTourStore();
-    const infoNodo = nodosTour[store.nodoActual];
-    const idiomaActual = useTourStore(state => state.idiomaActual);
-    const cambiarIdioma = useTourStore(state => state.cambiarIdioma);
-    
-    // 🚨 ATAJO DE TRADUCCIÓN
-    const t = diccionario[idiomaActual]; 
+    // ✅ Leemos la info del nodo actual directamente del store (datos de Supabase)
+    const nodos       = useTourStore((state) => state.nodos);
+    const infoNodo    = nodos[store.nodoActual];
+    const idiomaActual  = useTourStore((state) => state.idiomaActual);
+    const cambiarIdioma = useTourStore((state) => state.cambiarIdioma);
 
-    // ESTADO PARA DETECTAR SOPORTE VR
+    const t = diccionario[idiomaActual];
+
     const [vrSupported, setVrSupported] = useState(false);
     const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
     useEffect(() => {
-        // Verificamos si el navegador soporta VR (requiere HTTPS o localhost)
         if (navigator.xr) {
-            navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
-                setVrSupported(supported);
-            });
+            navigator.xr.isSessionSupported('immersive-vr').then(setVrSupported);
         }
     }, []);
 
@@ -37,17 +33,10 @@ export default function OverlayUI() {
         }
     };
 
-    // Lógica para entrar a VR usando tu botón personalizado
     const entrarVR = async () => {
-        if (!vrSupported) {
-            console.warn("VR no soportado en este dispositivo/navegador.");
-            return;
-        }
-        try {
-            await xrStore.enterVR();
-        } catch (error) {
-            console.error("Error al entrar en VR:", error);
-        }
+        if (!vrSupported) return;
+        try { await xrStore.enterVR(); }
+        catch (error) { console.error("Error al entrar en VR:", error); }
     };
 
     // Se esconde durante la caída cinematográfica inicial
@@ -55,33 +44,24 @@ export default function OverlayUI() {
 
     return (
         <div id="ui-overlay">
-            
+
             {/* 1. INFO NODO (Arriba Izquierda) */}
-            <div 
-                id="info-nodo-actual" 
-                style={{ 
-                    opacity: store.menuAbierto ? 0 : 1, 
-                    transition: 'opacity 0.4s ease' 
-                }}
+            <div
+                id="info-nodo-actual"
+                style={{ opacity: store.menuAbierto ? 0 : 1, transition: 'opacity 0.4s ease' }}
             >
-                {/* 🚨 Usamos la traducción o un valor por defecto traducido */}
-                <div id="info-titulo">{infoNodo.ui?.titulo || t["UI_TITULO_DEFECTO"]}</div>
+                <div id="info-titulo">{infoNodo.ui?.titulo    || t["UI_TITULO_DEFECTO"]}</div>
                 <div id="info-categoria">{infoNodo.ui?.categoria || t["UI_CATEGORIA_DEFECTO"]}</div>
             </div>
 
             {/* 2. BOTONES ACCIÓN (Arriba Derecha) */}
             <div className="ui-top-right">
-                <div className="herramientas-pill">    
-                    {/* TU BOTÓN VR ORIGINAL CON LÓGICA DE SOPORTE */}
-                    <button 
-                        className="btn-icon" 
-                        title="Realidad Virtual" 
+                <div className="herramientas-pill">
+                    <button
+                        className="btn-icon"
+                        title="Realidad Virtual"
                         onClick={entrarVR}
-                        style={{ 
-                            opacity: vrSupported ? 1 : 0.3, // Se sombrea si no hay soporte
-                            cursor: vrSupported ? 'pointer' : 'default',
-                            transition: 'opacity 0.3s ease'
-                        }}
+                        style={{ opacity: vrSupported ? 1 : 0.3, cursor: vrSupported ? 'pointer' : 'default', transition: 'opacity 0.3s ease' }}
                     >
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <rect x="2" y="7" width="20" height="11" rx="2"></rect>
@@ -96,23 +76,22 @@ export default function OverlayUI() {
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff4444" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><line x1="2" y1="2" x2="22" y2="22"></line></svg>
                         )}
                     </button>
-                    
+
                     <button className="btn-icon" onClick={cambiarIdioma} title="Cambiar Idioma">
                         {idiomaActual === 'es' ? 'EN' : 'ES'}
                     </button>
-                    
+
                     <button className="btn-icon" onClick={() => store.setPanelActivo('compartir')} title={t["UI_COMPARTIR_TITULO"]}>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
                     </button>
-                    
+
                     {!esIOS && (
                         <button className="btn-icon" onClick={toggleFullscreen} title="Pantalla Completa">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
                         </button>
                     )}
                 </div>
-                
-                {/* 🚨 BOTÓN CONTACTO TRADUCIDO */}
+
                 <button className="btn-contacto" onClick={() => store.setPanelActivo('contacto')}>
                     {t["UI_BTN_CONTACTO"]}
                 </button>
@@ -121,7 +100,7 @@ export default function OverlayUI() {
             {/* 3. REDES SOCIALES */}
             <SocialBar />
 
-            {/* 4. BARRA INFERIOR TRADUCIDA 🚨 */}
+            {/* 4. BARRA INFERIOR */}
             <div className="ui-bottom-bar-pill">
                 <button onClick={() => store.setMenuAbierto(true)}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
@@ -136,7 +115,8 @@ export default function OverlayUI() {
                     <span>{t["UI_BTN_MAPA"]}</span>
                 </button>
             </div>
-            {/* 🚨 5. NUESTRO MINIMAPA GTA FLOTANTE */}
+
+            {/* 5. MINIMAPA GTA */}
             <MapaBase esMinimapa={true} />
         </div>
     );

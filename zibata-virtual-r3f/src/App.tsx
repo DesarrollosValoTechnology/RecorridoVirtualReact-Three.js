@@ -14,6 +14,9 @@ import IntroAnimacion from './components/IntroAnimacion';
 import { actualizarMinimapaFrame, moverMapaANodo } from './utils/mapaRadar';
 import AdminNuevoNodo from './components/AdminMode';
 import AdminSidebar from './components/AdminSidebar';
+import PanelEditorHotspots from './components/PanelEditorHotspots';
+import PanelInspector from './components/PanelInspector';
+import PanelEditarNodo from './components/PanelEditarNodo';
 
 // 🚨 1. ADIÓS AL ARCHIVO ESTÁTICO:
 // import { nodosTour } from './data/nodos'; 
@@ -101,33 +104,45 @@ function App() {
     }, [cargandoNodos, nodos, setNodoActual]);
 
     // EFECTO: Caída Cinematográfica (Intro)
-    useEffect(() => {
-        // Si seguimos descargando datos, no empezamos la intro todavía
-        if (cargandoNodos) return;
+useEffect(() => {
+    if (cargandoNodos) return;
 
-        const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-        async function iniciarSecuencia() {
-            await sleep(2000);
-            await sleep(2500);
+    async function iniciarSecuencia() {
+        // 🚀 EL "FAST-PASS" PARA ADMIN
+        if (isAdmin) {
             setLogoVisible(false);
-            await sleep(1500);
-            setFadeActivo(false); 
-            setIsTransitioning(true);
-            await sleep(7000);
+            setFadeActivo(false);
             setMostrarElementos3D(true);
-            await sleep(2000);
             setIsTransitioning(false);
-            
-            setIntroTerminada(true);
+            setIntroTerminada(true); // Esto detiene la rotación de la intro
+            return; // Nos salimos de la función aquí mismo
         }
-        iniciarSecuencia();
-    }, [cargandoNodos, setLogoVisible, setFadeActivo, setIsTransitioning, setMostrarElementos3D]);
+
+        // --- SECUENCIA NORMAL PARA MORTALES ---
+        const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+        await sleep(2000);
+        await sleep(2500);
+        setLogoVisible(false);
+        await sleep(1500);
+        setFadeActivo(false); 
+        setIsTransitioning(true);
+        await sleep(7000);
+        setMostrarElementos3D(true);
+        await sleep(2000);
+        setIsTransitioning(false);
+        setIntroTerminada(true);
+    }
+    
+    iniciarSecuencia();
+}, [cargandoNodos, isAdmin, setLogoVisible, setFadeActivo, setIsTransitioning, setMostrarElementos3D]);
 
     // 🚨 5. ACTUALIZAMOS EL MINIMAPA PARA QUE LEA DE LA BD
+    //Pasar Latitud y Longitud reales al mapa de Google
     useEffect(() => {
         const info = nodos[nodoActual];
-        if (info && info.mapaX && info.mapaY) { // Usamos mapaX y mapaY como lo definimos en el traductor
-            moverMapaANodo(info.mapaX, info.mapaY);
+        // Antes tenías: moverMapaANodo(info.mapaX, info.mapaY); <- ERROR
+        if (info && info.lat && info.lng) { 
+            moverMapaANodo(Number(info.lat), Number(info.lng));
         }
     }, [nodoActual, nodos]);
 
@@ -176,23 +191,24 @@ function App() {
         return <div style={{ color: 'white' }}>Error: No se encontraron escenas en la base de datos.</div>;
     }
 
-    return (
-        <div style={{ width: '100vw', height: '100vh', backgroundColor: '#000', position: 'relative', overflow: 'hidden' }}>
-            
-            {/* --- MODO EDITOR UI --- */}
-            {isAdmin && (
-                <>
-                    <AdminSidebar />
-                    {adminPanelActivo === 'nuevoNodo' && <AdminNuevoNodo />}
-                    
-                    {adminPanelActivo === 'editorHotspots' && (
-                        <div style={{ position: 'absolute', top: 20, left: 100, color: 'white', zIndex: 9999, background: 'rgba(0,0,0,0.8)', padding: '10px 20px', borderRadius: '8px' }}>
-                            🎯 Modo de Edición 3D Activado (Próximamente)
-                        </div>
-                    )}
+   return (
+    <div style={{ width: '100vw', height: '100vh', backgroundColor: '#000', position: 'relative', overflow: 'hidden' }}>
+        
+        {/* --- MODO EDITOR UI --- */}
+        {/* Encapsulamos TODO lo que sea de admin aquí adentro */}
+        {isAdmin && (
+    <>
+        <AdminSidebar />
+        {adminPanelActivo === 'nuevoNodo' && <AdminNuevoNodo />}
+        {adminPanelActivo === 'editorHotspots' && (
+            <>
+                <PanelEditorHotspots />
+                <PanelInspector />
                 </>
             )}
-            {/* ---------------------- */}
+        {adminPanelActivo === 'editarNodo' && <PanelEditarNodo />} 
+        </>
+    )}
 
             <PantallaCarga />
             <OverlayUI />
