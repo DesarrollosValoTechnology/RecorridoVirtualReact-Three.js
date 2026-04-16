@@ -143,19 +143,27 @@ export function actualizarMinimapaFrame(camera: any, controls: any, nodoActual: 
                 divIcono.className = `icon-mapa ${tipo}`;
                 divIcono.innerHTML = ICONOS[tipo] || ICONOS['pasos'];
 
-                divIcono.addEventListener('mousemove', (e) => {
+                // ✅ PON ESTE BLOQUE NUEVO:
+                divIcono.addEventListener('pointerenter', (e) => {
                     store.setTooltipHover({
                         titulo: info.ui.titulo,
                         miniatura: info.ui.miniatura,
                         x: e.clientX,
-                        y: e.clientY
+                        y: e.clientY - 20 // Lo subimos tantito para que no estorbe al cursor
                     });
+                });
+
+                divIcono.addEventListener('pointerleave', () => { 
+                    store.setTooltipHover(null); 
                 });
 
                 divIcono.addEventListener('mouseleave', () => { store.setTooltipHover(null); });
 
                 divIcono.addEventListener('click', (e) => {
                     e.stopPropagation();
+
+                    // 🚨 1. MATAMOS EL TOOLTIP INMEDIATAMENTE AL HACER CLICK
+                    store.setTooltipHover(null);
                     if (!store.isTransitioning) {
                         store.setPanelActivo(null);
                         store.cargarNodo(id);

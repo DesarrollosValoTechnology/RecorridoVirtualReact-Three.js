@@ -6,29 +6,52 @@ interface Props {
     esMinimapa?: boolean;
 }
 
-// Calibrado a -58 grados para coincidir con el Norte real de Zibatá
 const ROTACION_IMAGEN_MANUAL = -58;
+// El tamaño "virtual" de nuestro plano. ¡No lo cambies!
+const ANCHO_PLANO = 3000; 
 
 export default function MapaBase({ esMinimapa = false }: Props) {
     const nodoActual = useTourStore((state) => state.nodoActual);
-    // ✅ Leemos posición del mapa desde el store (datos de Supabase)
-    const nodos    = useTourStore((state) => state.nodos);
+    const nodos = useTourStore((state) => state.nodos);
     const infoNodo = nodos[nodoActual];
 
     const posX = infoNodo?.mapaX ?? 50;
     const posY = infoNodo?.mapaY ?? 50;
 
-    const [escala, setEscala]       = useState(1);
-    const [offset, setOffset]       = useState({ x: 0, y: 0 });
+    // Calculamos la escala inicial para que el plano de 3000px quepa en la pantalla
+    const calcularEscalaBase = () => {
+        if (esMinimapa) return 0.25;
+        // Asumimos que el panel ocupa un 80% del alto de la ventana
+        const alturaPanel = window.innerHeight * 0.8; 
+        // Dividimos la altura del panel entre el alto aprox de la imagen (3000px)
+        // Le sumamos un "plus" (ej. 0.05) para hacer el ligero zoom que pediste y matar bordes blancos.
+        return (alturaPanel / ANCHO_PLANO) + 0.08; 
+    };
+
+    const [escalaBase, setEscalaBase] = useState(calcularEscalaBase());
+    const [escala, setEscala] = useState(escalaBase);
+    const [offset, setOffset] = useState({ x: 0, y: 0 });
     const [arrastrando, setArrastrando] = useState(false);
 
-    const inicioDrag          = useRef({ x: 0, y: 0 });
+    const inicioDrag = useRef({ x: 0, y: 0 });
     const distanciaInicialRef = useRef<number | null>(null);
 
+    // Recalcular escala si cambian el tamaño de la ventana
+    useEffect(() => {
+        const handleResize = () => {
+            const nuevaEscalaBase = calcularEscalaBase();
+            setEscalaBase(nuevaEscalaBase);
+            if (!esMinimapa) setEscala(nuevaEscalaBase);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [esMinimapa]);
+
+    // Resetear al cambiar de nodo
     useEffect(() => {
         setOffset({ x: 0, y: 0 });
-        if (!esMinimapa) setEscala(1);
-    }, [nodoActual, esMinimapa]);
+        if (!esMinimapa) setEscala(escalaBase);
+    }, [nodoActual, esMinimapa, escalaBase]);
 
     const iniciarArrastreMouse = (e: React.MouseEvent) => {
         if (esMinimapa) return;
@@ -62,14 +85,17 @@ export default function MapaBase({ esMinimapa = false }: Props) {
             const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
             const factor = d / distanciaInicialRef.current;
             distanciaInicialRef.current = d;
-            setEscala(prev => Math.min(Math.max(0.4, prev * factor), 4));
+            setEscala(prev => Math.min(Math.max(escalaBase, prev * factor), 4));
         }
     };
 
     return (
         <div
             className={`contenedor-mapa ${esMinimapa ? 'modo-minimapa' : 'modo-panel'}`}
-            onWheel={(e) => !esMinimapa && setEscala(prev => Math.min(Math.max(0.4, prev * (e.deltaY > 0 ? 0.9 : 1.1)), 4))}
+            onWheel={(e) => {
+                if (esMinimapa) return;
+                setEscala(prev => Math.min(Math.max(escalaBase, prev * (e.deltaY > 0 ? 0.9 : 1.1)), 4));
+            }}
             onMouseDown={iniciarArrastreMouse}
             onMouseMove={arrastrarMouse}
             onMouseUp={() => setArrastrando(false)}
@@ -83,23 +109,25 @@ export default function MapaBase({ esMinimapa = false }: Props) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                overflow: 'hidden'
             }}
         >
-            {/* CAPA DE ZOOM */}
+            {/* CAPA DE ZOOM (Aplica la escala dinámica) */}
             <div style={{
                 width: '100%', height: '100%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transform: `scale(${esMinimapa ? 0.25 : escala})`,
+                transform: `scale(${escala})`,
                 transition: arrastrando ? 'none' : 'transform 0.2s ease-out',
             }}>
-                {/* CAPA DE POSICIÓN Y ROTACIÓN */}
+                {/* CAPA DE POSICIÓN Y ROTACIÓN (Mantiene el tamaño virtual de 3000px) */}
                 <div
                     className="lienzo-transformable"
                     style={{
                         position: 'absolute',
-                        width: '3000px',
+                        width: `${ANCHO_PLANO}px`,
                         height: 'auto',
-                        transform: `translate(calc(50% - ${posX}% + ${offset.x}px), calc(50% - ${posY}% + ${offset.y}px))
+                        // La magia original: centra el punto X,Y en la pantalla
+                        transform: `translate(calc(50% - ${posX}% + ${offset.x / escala}px), calc(50% - ${posY}% + ${offset.y / escala}px))
                                     ${esMinimapa ? `rotate(calc(var(--rotacion-gta, 0rad) + ${ROTACION_IMAGEN_MANUAL}deg))` : 'rotate(0rad)'}`,
                         transformOrigin: `${posX}% ${posY}%`,
                         display: 'flex',
@@ -109,13 +137,14 @@ export default function MapaBase({ esMinimapa = false }: Props) {
                     }}
                 >
                     <img
-                        src="/Assets/zibata_plano.webp"
+                        src="/Assets/zibata_plano.jpeg"
                         alt="Plano"
                         className="imagen-plano"
                         style={{ width: '100%', height: 'auto', display: 'block' }}
                         draggable={false}
                     />
 
+                    {/* CURSOR MODO PANEL (El punto verde) */}
                     {!esMinimapa && (
                         <div className="marcador-panel-grande" style={{ position: 'absolute', left: `${posX}%`, top: `${posY}%` }}>
                             <div className="pulso-verde"></div>
@@ -124,9 +153,9 @@ export default function MapaBase({ esMinimapa = false }: Props) {
                 </div>
             </div>
 
-            {/* CURSOR DEL MINIMAPA */}
+            {/* CURSOR MODO MINIMAPA (La flecha estilo GTA) */}
             {esMinimapa && (
-                <div className="cursor-gta" style={{ zIndex: 1001 }}>
+                <div className="cursor-gta" style={{ zIndex: 1001, position: 'absolute' }}>
                     <svg
                         width="34" height="34" viewBox="0 0 24 24" fill="#5CB82A"
                         xmlns="http://www.w3.org/2000/svg"

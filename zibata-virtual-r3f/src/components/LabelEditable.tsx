@@ -23,9 +23,15 @@ export default function LabelEditable({ datos }: any) {
                 position={posTarget} 
                 onClick={(e) => { e.stopPropagation(); setLabelSeleccionadoId(datos.id); }}
             >
-                <sphereGeometry args={[isSelected ? 8 : 5, 16, 16]} />
-                <meshBasicMaterial color={isSelected ? "#e2a74a" : "#666"} depthTest={false} transparent opacity={0.8} />
-            </mesh>
+            <sphereGeometry args={[isSelected ? 8 : 5, 16, 16]} />
+                    <meshBasicMaterial 
+                        // 🎨 Cambiamos el color: Morado si está seleccionado, un gris más claro si no.
+                        color={isSelected ? "#a855f7" : "#444"} 
+                        depthTest={false} 
+                        transparent 
+                        opacity={0.8} 
+                    />
+                </mesh>
 
             {isSelected && (
             <TransformControls 
@@ -41,8 +47,15 @@ export default function LabelEditable({ datos }: any) {
             />
             )}
 
-            {/* Visualización del poste y texto */}
-            <Line points={[posTarget, posEtiqueta]} color="#e2a74a" lineWidth={2} transparent opacity={0.5} depthTest={false} />
+            {/* También podemos cambiar el color de la línea (el poste) para que combine */}
+            <Line 
+                points={[posTarget, posEtiqueta]} 
+                color={isSelected ? "#a855f7" : "#e2a74a"} // Morado si editamos, dorado si no.
+                lineWidth={2} 
+                transparent 
+                opacity={0.5} 
+                depthTest={false} 
+            />
             
             <group position={posEtiqueta}>
                 <Html center distanceFactor={15}>

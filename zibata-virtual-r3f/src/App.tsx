@@ -200,6 +200,7 @@ useEffect(() => {
     <>
         <AdminSidebar />
         {adminPanelActivo === 'nuevoNodo' && <AdminNuevoNodo />}
+        {adminPanelActivo === 'editorLabels' && <PanelEditorLabels />}
         {adminPanelActivo === 'editorHotspots' && (
             <>
                 <PanelEditorHotspots />
@@ -207,6 +208,7 @@ useEffect(() => {
             )}
         {adminPanelActivo === 'editarNodo' && <PanelEditarNodo />} 
         </>
+        
     )}
 
             <PantallaCarga />

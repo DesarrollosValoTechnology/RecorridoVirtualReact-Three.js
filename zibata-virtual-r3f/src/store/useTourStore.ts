@@ -111,11 +111,13 @@ export const useTourStore = create<TourState>((set, get) => ({
                     tipo:     h.tipo,
                     posicion: { x: h.x, y: h.y, z: h.z },
                 })),
+                // ✅ CÓDIGO NUEVO (Pon este)
                 labels: nodoDB.labels.map((l: any) => ({
-                    id:     l.id,
-                    texto:  l.texto,
-                    target: { x: l.x, y: l.y, z: l.z },
-                    offset: { x: 0, y: l.offset_y || 15, z: 0 },
+                    id:       l.id,
+                    texto_es: l.texto_es, // 👈 Extraemos el español
+                    texto_en: l.texto_en, // 👈 Extraemos el inglés
+                    target:   { x: l.x, y: l.y, z: l.z },
+                    offset:   { x: 0, y: l.offset_y || 15, z: 0 },
                 })),
             };
         });
@@ -211,7 +213,14 @@ export const useTourStore = create<TourState>((set, get) => ({
     setMostrarElementos3D:(val) => set({ mostrarElementos3D: val }),
     setUserQuiereRotacion:(val) => set({ userQuiereRotacion: val }),
     setMenuAbierto:       (val) => set({ menuAbierto: val }),
-    setPanelActivo:       (val) => set({ panelActivo: val }),
+    // 🚨 ESTE ES EL NUEVO BLOQUE (Asegúrate de que termine con coma al final)
+    setPanelActivo: (val) => {
+        set({ panelActivo: val });
+        // Si cerramos un panel, por pura seguridad borramos cualquier tooltip flotante
+        if (val === null) {
+            set({ tooltipHover: null });
+        }
+    },
     toggleRotacion: () => set((s) => ({ userQuiereRotacion: !s.userQuiereRotacion })),
     cambiarIdioma:  () => set((s) => ({ idiomaActual: s.idiomaActual === 'es' ? 'en' : 'es' })),
     setTooltipHover:(val) => set({ tooltipHover: val }),
