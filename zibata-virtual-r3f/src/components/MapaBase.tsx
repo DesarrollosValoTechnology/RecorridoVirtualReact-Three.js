@@ -137,7 +137,7 @@ export default function MapaBase({ esMinimapa = false }: Props) {
                     }}
                 >
                     <img
-                        src="/Assets/zibata_plano.jpeg"
+                        src="/Assets/zibata_plano.webp"
                         alt="Plano"
                         className="imagen-plano"
                         style={{ width: '100%', height: 'auto', display: 'block' }}

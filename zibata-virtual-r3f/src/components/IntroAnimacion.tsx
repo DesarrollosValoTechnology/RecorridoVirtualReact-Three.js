@@ -27,7 +27,7 @@ export default function IntroAnimacion() {
         if (isAdmin) {
             // 🎯 POSICIÓN INSTANTÁNEA PARA ADMIN
             cam.position.set(0, 0, 0);
-            cam.fov = 75;
+            cam.fov = 60;
             pseudoTarget.current.set(0, 0, 50); // Mirando al frente
         } else {
             // 🚁 POSICIÓN INICIAL PARA EL TOUR (CIELO)
@@ -62,8 +62,8 @@ export default function IntroAnimacion() {
         cam.position.lerp(new THREE.Vector3(0, 0, 0), lerpFactor);
 
         let velocidadZoom = velocidadCaida.current * 2 * ajusteFPS;
-        if (Math.abs(cam.fov - 75) > 0.01) {
-            cam.fov += (75 - cam.fov) * velocidadZoom;
+        if (Math.abs(cam.fov - 60) > 0.01) {
+            cam.fov += (60 - cam.fov) * velocidadZoom;
             cam.updateProjectionMatrix();
         }
 

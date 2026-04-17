@@ -7,28 +7,28 @@ import { useTourStore } from '../store/useTourStore';
 export default function ControlZoomFOV() {
     const { camera, gl } = useThree();
     
-    // Leemos el estado para no hacer zoom si hay un panel abierto
-    const { isTransitioning, menuAbierto, panelActivo } = useTourStore();
+    // 🚨 1. Extraemos setFovActual
+    const { isTransitioning, menuAbierto, panelActivo, setFovActual } = useTourStore();
 
     useEffect(() => {
         const canvas = gl.domElement;
         const cam = camera as THREE.PerspectiveCamera;
         let distanceStart = 0;
 
-        // 💻 EVENTO PARA PC (Rueda del ratón)
+        // 🚨 ELIMINA EL "PARCHE" QUE DECÍA if (cam.fov !== 60) ...
+        // Deja que la IntroAnimacion.tsx maneje la cámara al principio.
+
         const handleWheel = (e: WheelEvent) => {
             if (isTransitioning || menuAbierto || panelActivo !== null) return;
-            e.preventDefault(); // Evita que baje la página web
+            e.preventDefault(); 
             
             cam.fov += e.deltaY * 0.05;
-            
-            // 🚨 AQUÍ ESTÁN LOS LÍMITES DE TU LENTE (FOV)
-            // 25 = Zoom In súper de cerca | 100 = Zoom Out súper alejado
-            cam.fov = Math.max(25, Math.min(cam.fov, 100)); 
+            cam.fov = Math.max(25, Math.min(cam.fov, 90)); // Límite 90
             cam.updateProjectionMatrix();
+
+            setFovActual(cam.fov);
         };
 
-        // 📱 EVENTOS PARA MÓVIL (Pellizcar con dos dedos)
         const handleTouchStart = (e: TouchEvent) => {
             if (isTransitioning || menuAbierto || panelActivo !== null || e.touches.length !== 2) return;
             const dx = e.touches[0].pageX - e.touches[1].pageX;
@@ -47,8 +47,11 @@ export default function ControlZoomFOV() {
             distanceStart = distance; 
             
             cam.fov += delta * 0.2;
-            cam.fov = Math.max(25, Math.min(cam.fov, 100)); 
+            cam.fov = Math.max(25, Math.min(cam.fov, 90)); 
             cam.updateProjectionMatrix();
+
+            // 🚨 3. Avisamos al Store en móvil también
+            setFovActual(cam.fov);
         };
 
         canvas.addEventListener('wheel', handleWheel, { passive: false });
@@ -60,7 +63,7 @@ export default function ControlZoomFOV() {
             canvas.removeEventListener('touchstart', handleTouchStart);
             canvas.removeEventListener('touchmove', handleTouchMove);
         };
-    }, [camera, gl, isTransitioning, menuAbierto, panelActivo]);
+    }, [camera, gl, isTransitioning, menuAbierto, panelActivo, setFovActual]);
 
     return null;
 }

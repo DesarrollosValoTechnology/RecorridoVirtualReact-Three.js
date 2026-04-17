@@ -17,6 +17,7 @@ import AdminSidebar from './components/AdminSidebar';
 import PanelEditorHotspots from './components/PanelEditorHotspots';
 import PanelEditarNodo from './components/PanelEditarNodo';
 import PanelEditorLabels from './components/PanelEditorLabels';
+import IndicadorFOV from './components/IndicadorFOV';
 
 // 🚨 1. ADIÓS AL ARCHIVO ESTÁTICO:
 // import { nodosTour } from './data/nodos'; 
@@ -216,6 +217,7 @@ useEffect(() => {
             <PanelesOverlay />
             <FadeOverlay />
             <TooltipPreview />
+            <IndicadorFOV />
 
             <Canvas
                 camera={{ position: [-0.001, 250, 0.001], fov: 140 }}

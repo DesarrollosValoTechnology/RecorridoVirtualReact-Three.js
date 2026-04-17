@@ -50,6 +50,8 @@ interface TourState {
     crearNuevoLabel: () => Promise<void>;
     actualizarPropiedadesLabel: (id: string, campo: string, valor: any) => Promise<void>;
     borrarLabel: (id: string) => Promise<void>;
+    fovActual: number;
+    setFovActual: (fov: number) => void;
 }
 
 export const useTourStore = create<TourState>((set, get) => ({
@@ -302,4 +304,6 @@ export const useTourStore = create<TourState>((set, get) => ({
         const { error } = await supabase.from('labels').update({ x, y, z }).eq('id', id);
         if (error) console.error("Error al guardar posición del label:", error);
     },
+    fovActual: 60, // Zoom inicial
+    setFovActual: (fov) => set({ fovActual: fov }),
 }));

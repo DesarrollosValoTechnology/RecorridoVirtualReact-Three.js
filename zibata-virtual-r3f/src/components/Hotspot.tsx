@@ -1,5 +1,5 @@
 // src/components/Hotspot.tsx
-import { useRef, useState, useMemo } from 'react';
+import { useRef, useState, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
@@ -12,7 +12,6 @@ const ICONOS: Record<string, string> = {
     info:  `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="black" stroke="white" stroke-width="1.5"/><g transform="translate(4.8, 4.8) scale(0.6)" fill="white" stroke="white" stroke-width="0.5"><circle cx="12" cy="12" r="10" fill="none" stroke-width="1.5"/><path d="M12 16v-4"/><path d="M12 8h.01" stroke-width="3"/></g></svg>`,
 };
 
-// Pre-calculamos las URLs una sola vez de forma global
 const SVG_URLS: Record<string, string> = {
     drone: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(ICONOS.drone),
     casa:  'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(ICONOS.casa),
@@ -20,15 +19,16 @@ const SVG_URLS: Record<string, string> = {
     info:  'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(ICONOS.info),
 };
 
-// Pre-cargamos las texturas para evitar el parpadeo negro al entrar
 Object.values(SVG_URLS).forEach(url => useTexture.preload(url));
 
 export default function Hotspot({ datos }: any) {
     const iconoRef  = useRef<THREE.Mesh>(null);
     const anilloRef = useRef<THREE.Mesh>(null);
     const [hovered, setHovered] = useState(false);
+    
+    // 🚨 REFERENCIA PARA EL TIMER DE PRECARGA
+    const timerPrecarga = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // ✅ Todo viene del store — sin importaciones estáticas
     const cargarNodo      = useTourStore((state) => state.cargarNodo);
     const setTooltipHover = useTourStore((state) => state.setTooltipHover);
     const nodos           = useTourStore((state) => state.nodos);
@@ -42,6 +42,13 @@ export default function Hotspot({ datos }: any) {
 
     const axesHelper  = useMemo(() => new THREE.AxesHelper(80), []);
     const targetScale = useMemo(() => new THREE.Vector3(1, 1, 1), []);
+
+    // Limpieza del timer si el componente se desmonta de golpe
+    useEffect(() => {
+        return () => {
+            if (timerPrecarga.current) clearTimeout(timerPrecarga.current);
+        };
+    }, []);
 
     useFrame((state) => {
         if (iconoRef.current)  iconoRef.current.lookAt(0, 0, 0);
@@ -77,10 +84,18 @@ export default function Hotspot({ datos }: any) {
                     setHovered(true);
                     document.body.classList.add('sobre-hotspot');
                     document.body.style.cursor = 'pointer';
+
+                    // 🚨 PRECARGA INTELIGENTE CON DEBOUNCE (300ms)
+                    const urlDestino = nodos[datos.destino]?.archivo;
+                    if (urlDestino) {
+                        timerPrecarga.current = setTimeout(() => {
+                            const img = new Image();
+                            img.src = urlDestino;
+                        }, 300);
+                    }
                 }}
                 onPointerMove={(e) => {
                     e.stopPropagation();
-                    // ✅ Leemos la info del destino desde el store (datos dinámicos de Supabase)
                     const infoDestino = nodos[datos.destino]?.ui;
                     if (infoDestino) {
                         setTooltipHover({
@@ -96,6 +111,11 @@ export default function Hotspot({ datos }: any) {
                     document.body.classList.remove('sobre-hotspot');
                     document.body.style.cursor = 'grab';
                     setTooltipHover(null);
+
+                    // 🚨 CANCELAMOS LA PRECARGA SI QUITA EL MOUSE RÁPIDO
+                    if (timerPrecarga.current) {
+                        clearTimeout(timerPrecarga.current);
+                    }
                 }}
                 onClick={(e) => {
                     e.stopPropagation();
@@ -103,6 +123,11 @@ export default function Hotspot({ datos }: any) {
                     document.body.classList.remove('sobre-hotspot');
                     document.body.style.cursor = 'grab';
                     setTooltipHover(null);
+                    
+                    // 🚨 CANCELAMOS EL TIMER (ya vamos para allá, no hace falta que el timer siga)
+                    if (timerPrecarga.current) clearTimeout(timerPrecarga.current);
+
+                    // ✅ AQUÍ SE USA 'cargarNodo', adiós error TS6133
                     cargarNodo(datos.destino);
                 }}
             >
