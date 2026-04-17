@@ -7,14 +7,13 @@ export default function LabelEditable({ datos }: any) {
     const { labelSeleccionadoId, setLabelSeleccionadoId, actualizarPosicionLabel, idiomaActual } = useTourStore();
     const isSelected = labelSeleccionadoId === datos.id;
 
-    // Lógica de texto (igual que el original)
     const textoPreview = idiomaActual === 'en' 
         ? (datos.texto_en || datos.texto_es) 
         : (datos.texto_es || datos.texto_en);
 
-    const posTarget = new THREE.Vector3(datos.target.x, datos.target.y, datos.target.z);
-    const offset = new THREE.Vector3(0, datos.offset?.y || 0, 0);
-    const posEtiqueta = posTarget.clone().add(offset);
+    const posTarget    = new THREE.Vector3(datos.target.x, datos.target.y, datos.target.z);
+    const offset       = new THREE.Vector3(0, datos.offset?.y || 0, 0);
+    const posEtiqueta  = posTarget.clone().add(offset);
 
     return (
         <group>
@@ -23,34 +22,45 @@ export default function LabelEditable({ datos }: any) {
                 position={posTarget} 
                 onClick={(e) => { e.stopPropagation(); setLabelSeleccionadoId(datos.id); }}
             >
-            <sphereGeometry args={[isSelected ? 8 : 5, 16, 16]} />
-                    <meshBasicMaterial 
-                        // 🎨 Cambiamos el color: Morado si está seleccionado, un gris más claro si no.
-                        color={isSelected ? "#a855f7" : "#444"} 
-                        depthTest={false} 
-                        transparent 
-                        opacity={0.8} 
-                    />
-                </mesh>
+                <sphereGeometry args={[isSelected ? 8 : 5, 16, 16]} />
+                <meshBasicMaterial 
+                    color={isSelected ? "#a855f7" : "#444"} 
+                    depthTest={false} 
+                    transparent 
+                    opacity={0.8} 
+                />
+            </mesh>
 
             {isSelected && (
-            <TransformControls 
-                position={posTarget}
-                mode="translate"
-                onMouseUp={(e: any) => {
-                    // Obtenemos la nueva posición después de arrastrar
-                    const { x, y, z } = e.target.object.position;
-                    
-                    // 🚨 LLAMAMOS A LA NUEVA FUNCIÓN
-                    actualizarPosicionLabel(datos.id, x, y, z);
-                }}
-            />
+                <TransformControls 
+                    position={posTarget}
+                    mode="translate"
+                    onMouseUp={(e: any) => {
+                        if (!e?.target?.object) return;
+                        const pos = e.target.object.position;
+
+                        // ✅ Fix: normalizamos la posición a la superficie de la esfera (495 unidades)
+                        // igual que hace HotspotEditable, para que coincida con Label.tsx al renderizar
+                        const vector = new THREE.Vector3(pos.x, pos.y, pos.z)
+                            .normalize()
+                            .multiplyScalar(495);
+
+                        actualizarPosicionLabel(
+                            datos.id, 
+                            Math.round(vector.x), 
+                            Math.round(vector.y), 
+                            Math.round(vector.z)
+                        );
+
+                        // Movemos el objeto visualmente a la posición corregida
+                        e.target.object.position.set(vector.x, vector.y, vector.z);
+                    }}
+                />
             )}
 
-            {/* También podemos cambiar el color de la línea (el poste) para que combine */}
             <Line 
                 points={[posTarget, posEtiqueta]} 
-                color={isSelected ? "#a855f7" : "#e2a74a"} // Morado si editamos, dorado si no.
+                color={isSelected ? "#a855f7" : "#e2a74a"}
                 lineWidth={2} 
                 transparent 
                 opacity={0.5} 

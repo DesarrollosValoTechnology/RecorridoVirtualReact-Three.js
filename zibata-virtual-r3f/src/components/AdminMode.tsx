@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import type { CSSProperties, ChangeEvent, FormEvent } from 'react';
 import { supabase } from '../supabase/client';
 import { useTourStore } from '../store/useTourStore';
 
@@ -33,20 +34,20 @@ export default function AdminMode() {
         norte_offset: 0
     });
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleFile360Change = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFile360Change = (e: ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) setArchivo360(e.target.files[0]);
     };
 
-    const handleMiniChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleMiniChange = (e: ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) setArchivoMini(e.target.files[0]);
     };
 
     // Manejador del desplegable de categorías
-    const handleCategoriaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const handleCategoriaChange = (e: ChangeEvent<HTMLSelectElement>) => {
         if (e.target.value === 'NUEVA') {
             setEsNuevaCategoria(true);
         } else {
@@ -55,7 +56,7 @@ export default function AdminMode() {
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         if (!archivo360 || !archivoMini) {
             setMensaje('❌ Por favor selecciona ambas imágenes (360 y Miniatura)');
@@ -115,7 +116,7 @@ export default function AdminMode() {
     // ==========================================
     // 🎨 SISTEMA DE DISEÑO "RAYCAST PREMIUM"
     // ==========================================
-    const panelGlobalStyle: React.CSSProperties = {
+    const panelGlobalStyle: CSSProperties = {
         position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
         backgroundColor: 'rgba(15, 15, 15, 0.65)', backdropFilter: 'blur(16px)',              
         padding: '30px', borderRadius: '24px', border: '1px solid rgba(255, 255, 255, 0.08)', 
@@ -123,18 +124,18 @@ export default function AdminMode() {
         overflowY: 'auto', color: 'white', zIndex: 99999, fontFamily: 'system-ui, -apple-system, sans-serif'
     };
 
-    const labelStyle: React.CSSProperties = { 
+    const labelStyle: CSSProperties = { 
         display: 'block', fontSize: '10px', color: '#999', marginBottom: '6px', 
         marginTop: '12px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase'
     };
 
-    const inputPremiumStyle: React.CSSProperties = { 
+    const inputPremiumStyle: CSSProperties = { 
         width: '100%', padding: '10px 12px', borderRadius: '10px', 
         border: '1px solid rgba(255, 255, 255, 0.05)', backgroundColor: 'rgba(0, 0, 0, 0.4)', 
         color: 'white', outline: 'none', fontSize: '13px', boxSizing: 'border-box'
     };
 
-    const btnPremiumStyle: React.CSSProperties = {
+    const btnPremiumStyle: CSSProperties = {
         width: '100%', padding: '14px', marginTop: '20px', 
         backgroundColor: cargando ? 'rgba(255, 255, 255, 0.05)' : '#5cb82a', 
         color: cargando ? '#888' : '#fff', border: 'none', borderRadius: '12px', 

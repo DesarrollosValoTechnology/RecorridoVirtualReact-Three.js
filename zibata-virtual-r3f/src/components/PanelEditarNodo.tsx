@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { CSSProperties, ChangeEvent } from 'react';
 import { useTourStore } from '../store/useTourStore';
 import { supabase } from '../supabase/client';
 
@@ -29,7 +30,7 @@ export default function PanelEditarNodo() {
         if (name !== 'titulo') actualizarNodoActual({ [name]: valorFinal });
     };
 
-    const handleMiniUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleMiniUpload = async (e: ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.[0]) return;
         setSubiendoMini(true);
         try {
@@ -53,7 +54,7 @@ export default function PanelEditarNodo() {
     // ==========================================
     // 🎨 SISTEMA DE DISEÑO "RAYCAST PREMIUM"
     // ==========================================
-    const panelGlobalStyle: React.CSSProperties = {
+    const panelGlobalStyle: CSSProperties = {
         position: 'absolute', top: '20px', right: '20px', width: '300px',
         backgroundColor: 'rgba(15, 15, 15, 0.65)', // Cristal oscuro
         backdropFilter: 'blur(16px)',              // Desenfoca lo que hay detrás
@@ -64,19 +65,19 @@ export default function PanelEditarNodo() {
         color: 'white', zIndex: 100000, fontFamily: 'system-ui, -apple-system, sans-serif'
     };
 
-    const labelStyle: React.CSSProperties = { 
+    const labelStyle: CSSProperties = { 
         display: 'block', fontSize: '10px', color: '#999', 
         marginBottom: '6px', marginTop: '12px', fontWeight: 600, letterSpacing: '0.5px' 
     };
 
-    const inputPremiumStyle: React.CSSProperties = { 
+    const inputPremiumStyle: CSSProperties = { 
         width: '100%', padding: '10px 12px', borderRadius: '10px', 
         border: '1px solid rgba(255, 255, 255, 0.05)', 
         backgroundColor: 'rgba(0, 0, 0, 0.4)', // Hueco hundido en el cristal
         color: 'white', outline: 'none', fontSize: '13px', boxSizing: 'border-box'
     };
 
-    const btnPremiumStyle: React.CSSProperties = {
+    const btnPremiumStyle: CSSProperties = {
         width: '100%', padding: '12px', marginTop: '20px', 
         backgroundColor: 'rgba(255, 255, 255, 0.1)', color: 'white', 
         border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', 

@@ -1,5 +1,6 @@
 // src/components/MapaBase.tsx
 import { useState, useRef, useEffect } from 'react';
+import type { MouseEvent, TouchEvent } from 'react';
 import { useTourStore } from '../store/useTourStore';
 
 interface Props {
@@ -53,18 +54,18 @@ export default function MapaBase({ esMinimapa = false }: Props) {
         if (!esMinimapa) setEscala(escalaBase);
     }, [nodoActual, esMinimapa, escalaBase]);
 
-    const iniciarArrastreMouse = (e: React.MouseEvent) => {
+    const iniciarArrastreMouse = (e: MouseEvent) => {
         if (esMinimapa) return;
         setArrastrando(true);
         inicioDrag.current = { x: e.clientX - offset.x, y: e.clientY - offset.y };
     };
 
-    const arrastrarMouse = (e: React.MouseEvent) => {
+    const arrastrarMouse = (e: MouseEvent) => {
         if (!arrastrando || esMinimapa) return;
         setOffset({ x: e.clientX - inicioDrag.current.x, y: e.clientY - inicioDrag.current.y });
     };
 
-    const manejarTouchStart = (e: React.TouchEvent) => {
+    const manejarTouchStart = (e: TouchEvent) => {
         if (esMinimapa) return;
         if (e.touches.length === 1) {
             setArrastrando(true);
@@ -76,7 +77,7 @@ export default function MapaBase({ esMinimapa = false }: Props) {
         }
     };
 
-    const manejarTouchMove = (e: React.TouchEvent) => {
+    const manejarTouchMove = (e: TouchEvent) => {
         if (esMinimapa) return;
         if (e.touches.length === 1 && arrastrando) {
             const touch = e.touches[0];

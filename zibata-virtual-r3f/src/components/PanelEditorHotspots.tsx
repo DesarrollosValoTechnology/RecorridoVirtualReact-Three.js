@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { useTourStore } from '../store/useTourStore';
 
 export default function PanelEditorHotspots() {
@@ -19,7 +20,7 @@ export default function PanelEditorHotspots() {
     // ==========================================
     // 🎨 SISTEMA DE DISEÑO "RAYCAST PREMIUM"
     // ==========================================
-    const panelGlobalStyle: React.CSSProperties = {
+    const panelGlobalStyle: CSSProperties = {
         position: 'absolute', top: '20px', left: '90px', width: '320px',
         backgroundColor: 'rgba(15, 15, 15, 0.65)', backdropFilter: 'blur(16px)',              
         padding: '24px', borderRadius: '24px', border: '1px solid rgba(255, 255, 255, 0.08)', 
@@ -27,7 +28,7 @@ export default function PanelEditorHotspots() {
         fontFamily: 'system-ui, -apple-system, sans-serif'
     };
 
-    const inputPremiumStyle: React.CSSProperties = { 
+    const inputPremiumStyle: CSSProperties = { 
         width: '100%', padding: '10px 12px', borderRadius: '10px', 
         border: '1px solid rgba(255, 255, 255, 0.05)', backgroundColor: 'rgba(0, 0, 0, 0.4)', 
         color: 'white', outline: 'none', fontSize: '13px', boxSizing: 'border-box'
