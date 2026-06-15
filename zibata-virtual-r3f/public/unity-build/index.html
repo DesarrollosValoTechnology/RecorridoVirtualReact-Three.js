@@ -24,11 +24,6 @@
       </div>
     </div>
     <script>
-    // 🚨 PARCHE PARA ELECTRON: Ocultamos Node.js para que Unity no colapse
-    if (typeof require !== 'undefined') window.require = undefined;
-    if (typeof module !== 'undefined') window.module = undefined;
-    if (typeof exports !== 'undefined') window.exports = undefined;
-    // ...
       var canvas = document.querySelector("#unity-canvas");
 
       // Shows a temporary message banner/ribbon for a few seconds, or
@@ -57,12 +52,12 @@
       }
 
       var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/public.loader.js";
+      var loaderUrl = buildUrl + "/unity-build.loader.js";
       var config = {
         arguments: [],
-        dataUrl: buildUrl + "/public.data",
-        frameworkUrl: buildUrl + "/public.framework.js",
-        codeUrl: buildUrl + "/public.wasm",
+        dataUrl: buildUrl + "/unity-build.data",
+        frameworkUrl: buildUrl + "/unity-build.framework.js",
+        codeUrl: buildUrl + "/unity-build.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "DefaultCompany",
         productName: "PruebaURP",
