@@ -6,7 +6,14 @@ import { xrStore } from '../store/xrStore';
 import { diccionario } from '../data/diccionario';
 import MapaBase from './MapaBase';
 
-export default function OverlayUI() {
+// 🚨 1. LE DECIMOS A TYPESCRIPT QUÉ DATOS VAMOS A RECIBIR
+interface OverlayProps {
+    esAppEscritorio?: boolean;
+    onVolverAlMenu?: () => void;
+}
+
+// 🚨 2. RECIBIMOS LOS DATOS EN LA FUNCIÓN PRINCIPAL
+export default function OverlayUI({ esAppEscritorio, onVolverAlMenu }: OverlayProps) {
     const store = useTourStore();
     // ✅ Leemos la info del nodo actual directamente del store (datos de Supabase)
     const nodos       = useTourStore((state) => state.nodos);
@@ -45,10 +52,47 @@ export default function OverlayUI() {
     return (
         <div id="ui-overlay">
 
+            {/* 🚨 3. EL NUEVO BOTÓN DE VOLVER (Solo aparece en la App Kiosco) 🚨 */}
+            {esAppEscritorio && onVolverAlMenu && (
+                <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: 100, pointerEvents: 'auto' }}>
+                    <button 
+                        onClick={onVolverAlMenu}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            backgroundColor: 'rgba(26, 26, 26, 0.85)',
+                            backdropFilter: 'blur(10px)',
+                            color: 'rgba(255, 255, 255, 0.95)',
+                            padding: '10px 20px',
+                            borderRadius: '9999px',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            fontSize: '13px',
+                            fontWeight: 600,
+                            letterSpacing: '0.05em',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(40, 40, 40, 0.95)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(26, 26, 26, 0.85)'}
+                    >
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
+                        VOLVER AL MENÚ
+                    </button>
+                </div>
+            )}
+
             {/* 1. INFO NODO (Arriba Izquierda) */}
             <div
                 id="info-nodo-actual"
-                style={{ opacity: store.menuAbierto ? 0 : 1, transition: 'opacity 0.4s ease' }}
+                style={{ 
+                    opacity: store.menuAbierto ? 0 : 1, 
+                    transition: 'opacity 0.4s ease',
+                    /* 🚨 Empujamos el texto hacia abajo SI el botón de volver existe */
+                    marginTop: esAppEscritorio ? '60px' : '0px'
+                }}
             >
                 <div id="info-titulo">{infoNodo.ui?.titulo    || t["UI_TITULO_DEFECTO"]}</div>
                 <div id="info-categoria">{infoNodo.ui?.categoria || t["UI_CATEGORIA_DEFECTO"]}</div>

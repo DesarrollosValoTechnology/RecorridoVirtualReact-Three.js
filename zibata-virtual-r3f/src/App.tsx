@@ -18,11 +18,13 @@ import PanelEditorHotspots from './components/PanelEditorHotspots';
 import PanelEditarNodo from './components/PanelEditarNodo';
 import PanelEditorLabels from './components/PanelEditorLabels';
 import IndicadorFOV from './components/IndicadorFOV';
-
-// 🚨 1. ADIÓS AL ARCHIVO ESTÁTICO:
-// import { nodosTour } from './data/nodos'; 
 import ControlZoomFOV from './components/ControlZoomFOV';
 import TooltipPreview from './components/TooltipPreview';
+import GaleriaRenders from './components/GaleriaRenders';
+import { Capacitor } from '@capacitor/core';
+
+// 🚨 NUEVO: Importamos el menú del Showroom (Kiosco)
+import MenuPrevio from './components/MenuPrevio';
 
 function SincronizadorRadar({ controlsRef }: { controlsRef: any }) {
     const { camera } = useThree();
@@ -34,7 +36,6 @@ function SincronizadorRadar({ controlsRef }: { controlsRef: any }) {
             actualizarMinimapaFrame(camera, controlsRef.current, nodoActual); 
         }
     });
-
     return null; 
 }
 
@@ -72,7 +73,6 @@ function App() {
         panelActivo,
         nodoActual,
         setNodoActual,
-        // 🚨 2. TRAEMOS LAS VARIABLES DE SUPABASE
         cargarNodos,
         cargandoNodos,
         nodos
@@ -81,20 +81,35 @@ function App() {
     const controlsRef = useRef<any>(null);
     const [introTerminada, setIntroTerminada] = useState(false);
 
-    // 🚨 LA RUTA SECRETA
+    // 🚨 1. LEEMOS EL ENTORNO EXACTAMENTE AL MONTAR EL COMPONENTE
     const params = new URLSearchParams(window.location.search);
     const isAdmin = params.get('admin') === 'true';
-    const { adminPanelActivo } = useTourStore(); // Traemos el estado actual
+    const { adminPanelActivo } = useTourStore();
 
-    // 🚨 3. EL DISPARADOR DE SUPABASE
-    // Se ejecuta una sola vez al abrir la página
+    const esEntornoKiosco = typeof window !== 'undefined' && (
+        Capacitor.isNativePlatform() || 
+        navigator.userAgent.toLowerCase().includes('electron') ||
+        /android|ipad|iphone|ipod/i.test(navigator.userAgent.toLowerCase())
+    );
+
+    // 🚨 2. LAZY STATE: Forzamos el menú si es Kiosco o Móvil
+    const [pantallaActiva, setPantallaActiva] = useState(() => {
+        if (isAdmin) return 'recorrido';
+        if (esEntornoKiosco) return 'menu';
+        return 'recorrido'; // Default para web normal
+    });
+
+    const [logoTerminado, setLogoTerminado] = useState(false);
+
+    // ... (aquí siguen tus useEffects de Supabase y el Logo) ...
+
+    // DISPARADOR DE SUPABASE
     useEffect(() => {
         cargarNodos();
     }, [cargarNodos]);
 
-    // 🚨 4. ACTUALIZAMOS LA LECTURA DE URL COMPARTIDA
+    // LECTURA DE URL COMPARTIDA
     useEffect(() => {
-        // Solo ejecutamos esto si YA terminamos de cargar los nodos de la BD
         if (!cargandoNodos && Object.keys(nodos).length > 0) {
             const params = new URLSearchParams(window.location.search);
             const nodoCompartido = params.get('nodo');
@@ -104,56 +119,70 @@ function App() {
         }
     }, [cargandoNodos, nodos, setNodoActual]);
 
-    // EFECTO: Caída Cinematográfica (Intro)
-useEffect(() => {
-    if (cargandoNodos) return;
+    // 🚨 FASE 1: SECUENCIA DEL LOGO (Común para Web y App)
+    useEffect(() => {
+        if (cargandoNodos) return;
 
-    async function iniciarSecuencia() {
-        // 🚀 EL "FAST-PASS" PARA ADMIN
-        if (isAdmin) {
+        async function reproducirFaseLogo() {
+            if (isAdmin) {
+                setLogoVisible(false);
+                setFadeActivo(false);
+                setLogoTerminado(true);
+                return;
+            }
+
+            const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+            await sleep(4500); // 2000 + 2500 originales
             setLogoVisible(false);
-            setFadeActivo(false);
+            await sleep(1500);
+            setFadeActivo(false); 
+            setLogoTerminado(true); // Avisamos que el logo ya se quitó
+        }
+        
+        reproducirFaseLogo();
+    }, [cargandoNodos, isAdmin, setLogoVisible, setFadeActivo]);
+
+    // 🚨 FASE 2: SECUENCIA TINY PLANET (Solo se dispara en el recorrido)
+        useEffect(() => {
+            if (isAdmin) {
+                setMostrarElementos3D(true);
+                setIsTransitioning(false);
+                setIntroTerminada(true);
+                return;
+            }
+
+        if (!logoTerminado) return; // Esperamos a que el Logo termine
+        
+        // 🛑 EL FIX: Si no estamos explícitamente en 'recorrido', quédate congelado
+        if (pantallaActiva !== 'recorrido') return; 
+
+        async function reproducirFaseTinyPlanet() {
+            const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+            setIsTransitioning(true);
+            await sleep(7000);
             setMostrarElementos3D(true);
+            await sleep(2000);
             setIsTransitioning(false);
-            setIntroTerminada(true); // Esto detiene la rotación de la intro
-            return; // Nos salimos de la función aquí mismo
+            setIntroTerminada(true);
         }
 
-        // --- SECUENCIA NORMAL PARA MORTALES ---
-        const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-        await sleep(2000);
-        await sleep(2500);
-        setLogoVisible(false);
-        await sleep(1500);
-        setFadeActivo(false); 
-        setIsTransitioning(true);
-        await sleep(7000);
-        setMostrarElementos3D(true);
-        await sleep(2000);
-        setIsTransitioning(false);
-        setIntroTerminada(true);
-    }
-    
-    iniciarSecuencia();
-}, [cargandoNodos, isAdmin, setLogoVisible, setFadeActivo, setIsTransitioning, setMostrarElementos3D]);
-
-    // 🚨 5. ACTUALIZAMOS EL MINIMAPA PARA QUE LEA DE LA BD
-    //Pasar Latitud y Longitud reales al mapa de Google
+        reproducirFaseTinyPlanet();
+    }, [logoTerminado, pantallaActiva, isAdmin, setIsTransitioning, setMostrarElementos3D]);
+    // ACTUALIZAMOS EL MINIMAPA
     useEffect(() => {
         const info = nodos[nodoActual];
-        // Antes tenías: moverMapaANodo(info.mapaX, info.mapaY); <- ERROR
         if (info && info.lat && info.lng) { 
             moverMapaANodo(Number(info.lat), Number(info.lng));
         }
     }, [nodoActual, nodos]);
 
-    // EFECTO: TEMPORIZADOR DE INACTIVIDAD
+    // TEMPORIZADOR DE INACTIVIDAD
     useEffect(() => {
         let temporizadorInactividad: ReturnType<typeof setTimeout>;
 
         const reiniciarTemporizador = (e: Event) => {
             const target = e.target as HTMLElement;
-            if (target && target.closest('button, .panel-contenido, .herramientas-pill, .ui-bottom-bar-pill')) {
+            if (target && target.closest('button, .panel-contenido, .herramientas-pill, .ui-bottom-bar-pill, .menu-kiosco-btn')) {
                 return;
             }
 
@@ -177,12 +206,10 @@ useEffect(() => {
         };
     }, []);
     
-
-    // 🚨 6. PANTALLA DE CARGA PREVIA PARA EVITAR ERRORES 3D
+    // PANTALLA DE CARGA PREVIA PARA EVITAR ERRORES 3D
     if (cargandoNodos) {
         return (
             <div style={{ width: '100vw', height: '100vh', backgroundColor: '#000', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                {/* Puedes poner tu logo de Supraterra o Raycast aquí mientras carga la BD */}
                 <h2 style={{ color: 'white', fontFamily: 'sans-serif' }}>Conectando servidor...</h2>
             </div>
         );
@@ -196,59 +223,112 @@ useEffect(() => {
     <div style={{ width: '100vw', height: '100vh', backgroundColor: '#000', position: 'relative', overflow: 'hidden' }}>
         
         {/* --- MODO EDITOR UI --- */}
-        {/* Encapsulamos TODO lo que sea de admin aquí adentro */}
         {isAdmin && (
-    <>
-        <AdminSidebar />
-        {adminPanelActivo === 'nuevoNodo' && <AdminNuevoNodo />}
-        {adminPanelActivo === 'editorLabels' && <PanelEditorLabels />}
-        {adminPanelActivo === 'editorHotspots' && (
             <>
-                <PanelEditorHotspots />
-                </>
-            )}
-        {adminPanelActivo === 'editarNodo' && <PanelEditarNodo />} 
-        </>
-        
-    )}
+                <AdminSidebar />
+                {adminPanelActivo === 'nuevoNodo' && <AdminNuevoNodo />}
+                {adminPanelActivo === 'editorLabels' && <PanelEditorLabels />}
+                {adminPanelActivo === 'editorHotspots' && <PanelEditorHotspots />}
+                {adminPanelActivo === 'editarNodo' && <PanelEditarNodo />} 
+            </>
+        )}
 
-            <PantallaCarga />
-            <OverlayUI />
-            <PanelesOverlay />
-            <FadeOverlay />
-            <TooltipPreview />
-            <IndicadorFOV />
+        {/* --- 1. SIEMPRE VISIBLE AL INICIO --- */}
+        <PantallaCarga />
 
-            <Canvas
-                camera={{ position: [-0.001, 250, 0.001], fov: 140 }}
-                style={{ position: 'absolute', top: 0, left: 0 }}
-            >
-                <XR store={xrStore}>
-                    <IntroAnimacion />
-                    
-                    <SincronizadorRadar controlsRef={controlsRef} />
-
-                    <ControladorRotacion controlsRef={controlsRef} introTerminada={introTerminada} />
-
-                    <ControlZoomFOV />
-
-                    <Suspense fallback={null}>
-                        <Escena360 />
-                    </Suspense>
-
-                    <OrbitControls
-                        ref={controlsRef}
-                        makeDefault
-                        enableZoom={false} 
-                        enablePan={false}
-                        rotateSpeed={-0.6}
-                        enabled={!isTransitioning && !menuAbierto && panelActivo === null}
+{/* --- 2. EL MENÚ DEL SHOWROOM --- */}
+        {/* 🚨 FIX: Quitamos la condición "logoTerminado &&" y agregamos backgroundColor: '#000' 
+            para que el menú cargue escondido detrás del logo y bloquee el 3D al 100% */}
+            {pantallaActiva === 'menu' && (
+                <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 100, backgroundColor: '#000' }}>
+                    <MenuPrevio 
+                        onIrAlRecorrido={() => setPantallaActiva('recorrido')} 
+                        onIrAGaleria={() => setPantallaActiva('galeria')}
+                        onIrAShowroomUnity={() => setPantallaActiva('showroomUnity')}
                     />
-                </XR>
-            </Canvas>
-        </div>
+                </div>
+            )}
+
+        {/* 🚨 FIX: También le quitamos el "logoTerminado &&" a la Galería y le ponemos fondo oscuro por si acaso */}
+            {pantallaActiva === 'galeria' && (
+                <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 100, backgroundColor: '#000' }}>
+                    <GaleriaRenders onVolverAlMenu={() => setPantallaActiva('menu')} />
+                </div>
+            )}
+
+            {/* 🚨 PANTALLA NUEVA: SHOWROOM DE UNITY 🚨 */}
+            {pantallaActiva === 'showroomUnity' && (
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 100, backgroundColor: '#000' }}>
+                    
+                    {/* BOTÓN REACT PARA CERRAR UNITY */}
+                    <div style={{ position: 'absolute', top: '30px', left: '30px', zIndex: 110 }}>
+                        <button 
+                            onClick={() => setPantallaActiva('menu')} 
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '10px',
+                                backgroundColor: 'rgba(15, 15, 15, 0.7)', backdropFilter: 'blur(12px)',
+                                color: 'white', padding: '12px 24px', borderRadius: '9999px',
+                                border: '1px solid rgba(255, 255, 255, 0.15)', fontSize: '13px', fontWeight: 600,
+                                letterSpacing: '0.05em', cursor: 'pointer', transition: 'all 0.3s ease',
+                                boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(40, 40, 40, 0.9)'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(15, 15, 15, 0.7)'}
+                        >
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                            VOLVER AL MENÚ
+                        </button>
+                    </div>
+
+                    {/* EL CONTENEDOR DE UNITY */}
+                    <iframe 
+                        src="/unity-build/index.html" 
+                        style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
+                        title="Showroom Interactivo"
+                    />
+                </div>
+            )}
+
+            {/* --- 3. UI DEL TOUR --- */}
+                {pantallaActiva === 'recorrido' && (
+                    <>
+                        <OverlayUI 
+                            esAppEscritorio={esEntornoKiosco} // 👈 ¡Cambia esto también!
+                            onVolverAlMenu={() => setPantallaActiva('menu')} 
+                        />
+                <PanelesOverlay />
+                <FadeOverlay />
+                <TooltipPreview />
+                <IndicadorFOV />
+            </>
+        )}
+
+        {/* --- 4. MOTOR 3D (Se monta siempre en el fondo para precargar gráficos) --- */}
+        <Canvas
+            camera={{ position: [-0.001, 250, 0.001], fov: 140 }}
+            style={{ position: 'absolute', top: 0, left: 0, zIndex: 1 }}
+        >
+            <XR store={xrStore}>
+                {/* La animación solo se dispara cuando el Effect de Fase 2 lo ordena */}
+                <IntroAnimacion />
+                <SincronizadorRadar controlsRef={controlsRef} />
+                <ControladorRotacion controlsRef={controlsRef} introTerminada={introTerminada} />
+                <ControlZoomFOV />
+                <Suspense fallback={null}>
+                    <Escena360 />
+                </Suspense>
+                <OrbitControls
+                    ref={controlsRef}
+                    makeDefault
+                    enableZoom={false} 
+                    enablePan={false}
+                    rotateSpeed={-0.6}
+                    enabled={!isTransitioning && !menuAbierto && panelActivo === null}
+                />
+            </XR>
+        </Canvas>
+    </div>
     );
 }
 
 export default App;
-//Hola

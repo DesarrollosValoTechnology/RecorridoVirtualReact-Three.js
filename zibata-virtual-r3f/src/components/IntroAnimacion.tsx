@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useTourStore } from '../store/useTourStore';
+//import { cloneXRHandGltf, setXRLayerRenderTarget } from '@pmndrs/xr/internals';
 
 interface IOrbitControls {
     target: THREE.Vector3;
