@@ -6,9 +6,10 @@ interface MenuPrevioProps {
     onIrAlRecorrido: () => void;
     onIrAGaleria: () => void;
     onIrAShowroomUnity: () => void;
+    onIrASimulador: () => void;
 }
 
-export default function MenuPrevio({ onIrAlRecorrido, onIrAGaleria, onIrAShowroomUnity }: MenuPrevioProps) {
+export default function MenuPrevio({ onIrAlRecorrido, onIrAGaleria, onIrAShowroomUnity, onIrASimulador }: MenuPrevioProps) {
     const [animacionSalida, setAnimacionSalida] = useState(false);
     const [mostrarMapa, setMostrarMapa] = useState(false);
     
@@ -34,25 +35,41 @@ export default function MenuPrevio({ onIrAlRecorrido, onIrAGaleria, onIrAShowroo
         }
     }, [mostrarMapa]);
 
-    // 🚨 3. INICIALIZAR GOOGLE MAPS CON RETRASO DE ANIMACIÓN
+// 🚨 3. INICIALIZAR GOOGLE MAPS CON RETRASO DE ANIMACIÓN
     useEffect(() => {
         if (mostrarMapa && mapRef.current) {
             const google = (window as any).google;
             if (google && google.maps) {
                 
-                // Esperamos 600ms a que la animación CSS termine y el contenedor sea estable
+                // Definimos tu paleta oscura corporativa aquí mismo
+                const estiloOscuro = [
+                    { elementType: "geometry", stylers: [{ color: "#212121" }] },
+                    { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+                    { elementType: "labels.text.fill", stylers: [{ color: "#757575" }] },
+                    { elementType: "labels.text.stroke", stylers: [{ color: "#212121" }] },
+                    { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#757575" }] },
+                    { featureType: "water", elementType: "geometry", stylers: [{ color: "#000000" }] },
+                    { featureType: "road", elementType: "geometry", stylers: [{ color: "#2c2c2c" }] }
+                ];
+
+                // Esperamos 600ms a que la animación CSS termine
                 const timer = setTimeout(() => {
                     new google.maps.Map(mapRef.current!, {
                         center: { lat: 20.6710, lng: -100.3260 }, 
                         zoom: 14.5,
-                        mapTypeId: 'hybrid', 
+                        // 🚨 Magia de optimización: Mapa vectorial plano
+                        mapTypeId: 'roadmap', 
+                        // 🚨 Inyectamos el estilo oscuro
+                        styles: estiloOscuro,
                         disableDefaultUI: false,
-                        streetViewControl: true, // Activado para tus recorridos 360
-                        mapTypeControl: false
+                        streetViewControl: true, // El monito sigue vivo
+                        mapTypeControl: false,
+                        tilt: 0, // Apaga edificios 3D para salvar RAM
+                        maxZoom: 20 // Límite seguro
                     });
                 }, 600);
 
-                return () => clearTimeout(timer); // Limpieza si el componente se desmonta antes
+                return () => clearTimeout(timer);
             }
         }
     }, [mostrarMapa]);
@@ -80,14 +97,20 @@ export default function MenuPrevio({ onIrAlRecorrido, onIrAGaleria, onIrAShowroo
                 <img src="/Assets/Recurso 3.png" alt="Fraccionamientos" className="cintillo-logos" />
             </div>
 
-            {/* PANEL DERECHO */}
+{/* PANEL DERECHO */}
             <div className="menu-right-panel">
                 <button className="menu-grid-btn" onClick={() => manejarClic(onIrAGaleria)}>Desarrollo</button>
-                <button className="menu-grid-btn">Master Plan</button>
+                
+                {/* 🚨 Cambiamos la función a Master Plan para que abra el recorrido 3D */}
+                <button className="menu-grid-btn" onClick={() => manejarClic(onIrAlRecorrido)}>Master Plan</button>
+                
                 <button className="menu-grid-btn" onClick={() => setMostrarMapa(true)}>Ubicación</button>
                 <button className="menu-grid-btn" onClick={() => manejarClic(onIrAShowroomUnity)}>Show Room</button>
+                
+                
+                {/* Estos dos se quedan en blanco por ahora, listos para cuando los programemos */}
                 <button className="menu-grid-btn">Inversión</button>
-                <button className="menu-grid-btn" onClick={() => manejarClic(onIrAlRecorrido)}>Simulador</button>
+                <button className="menu-grid-btn"onClick={() => manejarClic(onIrASimulador)}>Simulador</button>
             </div>
 
             {/* POP-UP DE UBICACIÓN */}

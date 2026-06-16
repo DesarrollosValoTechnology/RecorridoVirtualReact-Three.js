@@ -22,6 +22,7 @@ import ControlZoomFOV from './components/ControlZoomFOV';
 import TooltipPreview from './components/TooltipPreview';
 import GaleriaRenders from './components/GaleriaRenders';
 import { Capacitor } from '@capacitor/core';
+import Simulador from './components/Simulador';
 
 // 🚨 NUEVO: Importamos el menú del Showroom (Kiosco)
 import MenuPrevio from './components/MenuPrevio';
@@ -245,10 +246,15 @@ function App() {
                         onIrAlRecorrido={() => setPantallaActiva('recorrido')} 
                         onIrAGaleria={() => setPantallaActiva('galeria')}
                         onIrAShowroomUnity={() => setPantallaActiva('showroomUnity')}
+                        onIrASimulador={() => setPantallaActiva('simulador')}
                     />
                 </div>
             )}
 
+            {/* 🚨 NUEVA PANTALLA: SIMULADOR 🚨 */}
+            {pantallaActiva === 'simulador' && (
+                <Simulador onCerrar={() => setPantallaActiva('menu')} />
+            )}
         {/* 🚨 FIX: También le quitamos el "logoTerminado &&" a la Galería y le ponemos fondo oscuro por si acaso */}
             {pantallaActiva === 'galeria' && (
                 <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 100, backgroundColor: '#000' }}>

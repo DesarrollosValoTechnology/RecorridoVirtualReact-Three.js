@@ -1,0 +1,24 @@
+Para probar la web:
+    npm run dev
+
+Para probar la app de escritorio:
+    npm run electron:dev
+
+Para compilar el código web final (crea la carpeta dist):
+    npm run build
+
+Para pasar ese código web nuevo a la carpeta de Android:
+    npx cap sync android
+
+Entramos a la carpeta de android:
+    cd android
+
+Generar el apk:
+    .\gradlew assembleDebug
+
+Regresar una carpeta hacia atrás:
+    cd ..
+
+Modo admin web: 
+    http://localhost:5173/?admin=true
+        *A la url agregamos: ?admin=true
