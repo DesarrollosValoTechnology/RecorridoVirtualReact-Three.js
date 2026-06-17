@@ -22,3 +22,5 @@ Regresar una carpeta hacia atrás:
 Modo admin web: 
     http://localhost:5173/?admin=true
         *A la url agregamos: ?admin=true
+
+

@@ -206,6 +206,33 @@ function App() {
             clearTimeout(temporizadorInactividad);
         };
     }, []);
+
+// 🚨 AQUÍ PEGAS EL ESCUCHADOR DE MENSAJES DE UNITY 🚨
+    useEffect(() => {
+        const escucharAUnity = () => {
+            console.log("¡React escuchó a Unity! Iniciando transición suave...");
+            
+            // 1. Encendemos el fade para que la pantalla se ponga negra poco a poco
+            setFadeActivo(true); 
+
+            // 2. Esperamos 600ms a que termine la animación de oscurecer
+            setTimeout(() => {
+                // 3. Ya en la oscuridad, cambiamos la pantalla sin que el usuario note el brinco
+                setPantallaActiva('recorrido');
+                
+                // 4. Le damos a React medio segundo para cargar el 3D, y quitamos el fondo negro
+                setTimeout(() => {
+                    setFadeActivo(false);
+                }, 500);
+            }, 600);
+        };
+
+        window.addEventListener('AbreMasterPlanDesdeUnity', escucharAUnity);
+
+        return () => {
+            window.removeEventListener('AbreMasterPlanDesdeUnity', escucharAUnity);
+        };
+    }, [setFadeActivo]);
     
     // PANTALLA DE CARGA PREVIA PARA EVITAR ERRORES 3D
     if (cargandoNodos) {
@@ -303,7 +330,7 @@ function App() {
                             onVolverAlMenu={() => setPantallaActiva('menu')} 
                         />
                 <PanelesOverlay />
-                <FadeOverlay />
+                
                 <TooltipPreview />
                 <IndicadorFOV />
             </>
@@ -333,6 +360,7 @@ function App() {
                 />
             </XR>
         </Canvas>
+        <FadeOverlay />
     </div>
     );
 }
