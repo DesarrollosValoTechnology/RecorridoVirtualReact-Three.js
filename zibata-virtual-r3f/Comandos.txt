@@ -23,4 +23,12 @@ Modo admin web:
     http://localhost:5173/?admin=true
         *A la url agregamos: ?admin=true
 
+Pasar glb a typescript:
+    npx gltfjsx@latest public/(poner el nombre del archivo).glb -o src/components/ShowroomNativo.tsx -t
 
+Al generar el script, tendrá errores:
+Omitir los errores:
+    // @ts-nocheck
+
+Corregir la libreria:
+import type { GLTF } from 'three-stdlib'

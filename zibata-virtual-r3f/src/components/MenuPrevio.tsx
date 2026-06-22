@@ -13,6 +13,10 @@ export default function MenuPrevio({ onIrAlRecorrido, onIrAGaleria, onIrAShowroo
     const [animacionSalida, setAnimacionSalida] = useState(false);
     const [mostrarMapa, setMostrarMapa] = useState(false);
     
+    // 👇 borrar esto de wix 👇
+    const [mostrarInversion, setMostrarInversion] = useState(false);
+    // 👆 hasta aqui 👆
+
     const mapRef = useRef<HTMLDivElement>(null);
     // 🚨 1. Referencia para controlar el video de fondo
     const videoRef = useRef<HTMLVideoElement>(null); 
@@ -27,13 +31,15 @@ export default function MenuPrevio({ onIrAlRecorrido, onIrAGaleria, onIrAShowroo
     // 🚨 2. EFECTO PARA PAUSAR/REPRODUCIR EL VIDEO (AHORRO DE RECURSOS)
     useEffect(() => {
         if (videoRef.current) {
-            if (mostrarMapa) {
-                videoRef.current.pause(); // Pausa el video si el modal está abierto
+            // 👇 borrar esto de wix (agregamos mostrarInversion a la condición) 👇
+            if (mostrarMapa || mostrarInversion) {
+                videoRef.current.pause(); // Pausa el video si algún modal está abierto
             } else {
                 videoRef.current.play().catch(err => console.log("Video play bloqueado:", err)); // Reanuda al cerrar
             }
+            // 👆 hasta aqui 👆
         }
-    }, [mostrarMapa]);
+    }, [mostrarMapa, mostrarInversion]); // <-- También lo agregamos a las dependencias aquí
 
 // 🚨 3. INICIALIZAR GOOGLE MAPS CON RETRASO DE ANIMACIÓN
     useEffect(() => {
@@ -79,8 +85,8 @@ export default function MenuPrevio({ onIrAlRecorrido, onIrAGaleria, onIrAShowroo
             
             {/* EL VIDEO DE FONDO (Ahora con videoRef asignado) */}
             <video 
-                ref={videoRef} 
-                src="/Assets/Macros Supraterra 2025 - Aeropuerto 1920x1080.mp4"
+                ref={videoRef}
+                src="/Assets/videoZibata.remuxed.mp4"
                 autoPlay 
                 loop 
                 muted 
@@ -107,9 +113,10 @@ export default function MenuPrevio({ onIrAlRecorrido, onIrAGaleria, onIrAShowroo
                 <button className="menu-grid-btn" onClick={() => setMostrarMapa(true)}>Ubicación</button>
                 <button className="menu-grid-btn" onClick={() => manejarClic(onIrAShowroomUnity)}>Show Room</button>
                 
-                
-                {/* Estos dos se quedan en blanco por ahora, listos para cuando los programemos */}
-                <button className="menu-grid-btn">Inversión</button>
+                {/* 👇 borrar esto de wix 👇 */}
+                <button className="menu-grid-btn" onClick={() => setMostrarInversion(true)}>Inversión</button>
+                {/* 👆 hasta aqui 👆 */}
+
                 <button className="menu-grid-btn"onClick={() => manejarClic(onIrASimulador)}>Simulador</button>
             </div>
 
@@ -127,6 +134,41 @@ export default function MenuPrevio({ onIrAlRecorrido, onIrAGaleria, onIrAShowroo
                     </div>
                 </div>
             </div>
+
+{/* 👇 borrar esto de wix 👇 */}
+            {/* POP-UP DE INVERSIÓN (IFRAME WIX) */}
+            <div className={`modal-ubicacion-overlay ${mostrarInversion ? 'activo' : ''}`} onClick={() => setMostrarInversion(false)}>
+                <div className="modal-ubicacion-content" onClick={(e) => e.stopPropagation()} style={{ padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                    
+                    <div className="modal-ubicacion-header" style={{ padding: '20px 30px', backgroundColor: 'rgba(15, 15, 15, 0.95)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                        <h2 className="modal-ubicacion-titulo">Oferta Inmobiliaria</h2>
+                        <button className="btn-cerrar-modal" onClick={() => setMostrarInversion(false)}>
+                            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                    
+                    {/* 🚨 Agregamos position: relative aquí para que la manita flote dentro de esta caja */}
+                    <div className="modal-ubicacion-body" style={{ flex: 1, padding: 0, position: 'relative' }}>
+                        
+                        {/* 👇 borrar esto de wix (overlay manita) 👇 */}
+                        <div className="indicador-scroll-overlay">
+                            {/* SVG minimalista de una mano apuntando */}
+                            <svg className="icono-manita" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11.5V6.5a1.5 1.5 0 00-3 0v8m0-8V5a1.5 1.5 0 00-3 0v8m0-8V4.5a1.5 1.5 0 00-3 0v10.512c0 .413-.083.82-.24 1.196l-1.465 3.515a2.25 2.25 0 002.08 3.127h8.25a2.25 2.25 0 002.25-2.25v-4.521c0-.414-.084-.82-.241-1.196l-1.07-2.569A3 3 0 0015 14.33V11.5z" />
+                            </svg>
+                            <span className="texto-scroll">Desliza</span>
+                        </div>
+                        {/* 👆 hasta aqui 👆 */}
+
+                        <iframe 
+                            src="https://intoxmediaagency.wixstudio.com/zibata-home/oferta-inmobiliaria-terrenos-comercial-residencial-zibata"
+                            style={{ width: '100%', height: '100%', border: 'none' }}
+                            title="Oferta Inmobiliaria Zibatá"
+                        />
+                    </div>
+                </div>
+            </div>
+            {/* 👆 hasta aqui 👆 */}
 
         </div>
     );

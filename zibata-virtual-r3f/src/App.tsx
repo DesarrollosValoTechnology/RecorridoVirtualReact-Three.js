@@ -1,7 +1,7 @@
 // src/App.tsx
 import { useEffect, Suspense, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, Environment, CameraControls } from '@react-three/drei';
 import { XR } from '@react-three/xr'; 
 import { xrStore } from './store/xrStore'; 
 import { useTourStore } from './store/useTourStore';
@@ -23,6 +23,8 @@ import TooltipPreview from './components/TooltipPreview';
 import GaleriaRenders from './components/GaleriaRenders';
 import { Capacitor } from '@capacitor/core';
 import Simulador from './components/Simulador';
+import { Model as ShowroomNativo } from './components/ShowroomNativo';
+import Waypoint from './components/Waypoint';
 
 // 🚨 NUEVO: Importamos el menú del Showroom (Kiosco)
 import MenuPrevio from './components/MenuPrevio';
@@ -80,6 +82,7 @@ function App() {
     } = useTourStore();
 
     const controlsRef = useRef<any>(null);
+    const showroomControlsRef = useRef<any>(null);
     const [introTerminada, setIntroTerminada] = useState(false);
 
     // 🚨 1. LEEMOS EL ENTORNO EXACTAMENTE AL MONTAR EL COMPONENTE
@@ -289,15 +292,13 @@ function App() {
                 </div>
             )}
 
-            {/* 🚨 PANTALLA NUEVA: SHOWROOM DE UNITY 🚨 */}
+{/* 🚨 PANTALLA NUEVA: SHOWROOM DE UNITY (PRONTO R3F) 🚨 */}
             {pantallaActiva === 'showroomUnity' && (
                 <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 100, backgroundColor: '#000' }}>
                     
-                    {/* BOTÓN REACT PARA CERRAR UNITY */}
+                    {/* BOTÓN REACT PARA CERRAR (Este lo dejamos intacto) */}
                     <div style={{ position: 'absolute', top: '30px', left: '30px', zIndex: 110 }}>
-                        <button 
-                            onClick={() => setPantallaActiva('menu')} 
-                            style={{
+                        <button onClick={() => setPantallaActiva('menu')} style={{
                                 display: 'flex', alignItems: 'center', gap: '10px',
                                 backgroundColor: 'rgba(15, 15, 15, 0.7)', backdropFilter: 'blur(12px)',
                                 color: 'white', padding: '12px 24px', borderRadius: '9999px',
@@ -313,12 +314,43 @@ function App() {
                         </button>
                     </div>
 
-                    {/* EL CONTENEDOR DE UNITY */}
+                    {/* 🛑 COMENTAMOS EL IFRAME DE UNITY POR AHORA
                     <iframe 
                         src="/unity-build/index.html" 
                         style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
                         title="Showroom Interactivo"
                     />
+                    */}
+
+{/* 🚨 EL NUEVO SHOWROOM NATIVO 🚨 */}
+                    <div style={{ width: '100%', height: '100%' }}>
+                        <Canvas camera={{ position: [0, 1.6, 5], fov: 60 }}>
+                        <Suspense fallback={null}>
+                            <Environment preset="city" /> 
+                            
+                            {/* 🚨 NUEVOS CONTROLES CINEMÁTICOS (Exclusivos del Showroom) */}
+                            <CameraControls ref={showroomControlsRef} makeDefault />
+                            
+                            {/* ¡Completamente limpio! */}
+                            <ShowroomNativo />
+                            
+                            {/* TUS WAYPOINTS */}
+                            <Waypoint 
+                                posicion={[0, 0, 0]} 
+                                objetivoCámara={[0, 1.6, 0]} 
+                                controlsRef={showroomControlsRef} 
+                            />
+                            
+                            <Waypoint 
+                                posicion={[4, 0, -3]} 
+                                objetivoCámara={[0, 1.6, -3]} 
+                                controlsRef={showroomControlsRef} 
+                            />
+
+                        </Suspense>
+                    </Canvas>
+                    </div>
+
                 </div>
             )}
 

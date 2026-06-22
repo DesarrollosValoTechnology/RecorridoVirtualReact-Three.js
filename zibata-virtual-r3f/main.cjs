@@ -1,5 +1,6 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
+const { createSolutionBuilder } = require('typescript');
 
 // Asegura que Electron use la gráfica para renderizar mapas 3D
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
@@ -11,7 +12,7 @@ function createWindow() {
         height: 720,
         // Lo dejamos en false por ahora para que puedas programar a gusto.
         // El día de la junta con los directivos lo cambiamos a true.
-        fullscreen: true, 
+        fullscreen: false, 
         autoHideMenuBar: true,
         webPreferences: {
             nodeIntegration: true,

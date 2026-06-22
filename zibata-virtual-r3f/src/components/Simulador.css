@@ -67,18 +67,21 @@
 }
 
 .simulador-titulo {
-    font-size: 28px;
-    font-weight: 300;
+    font-size: 32px; /* Lo subimos un poco */
+    font-weight: 500; /* Le damos más cuerpo para que no se vea frágil */
     letter-spacing: 4px;
-    margin-bottom: 5px;
-    color: #fff;
+    margin-bottom: 10px;
+    color: #ffffff; /* Blanco puro */
+    text-shadow: 0 2px 10px rgba(255, 255, 255, 0.2); /* Un brillo sutil alrededor */
 }
 
 .simulador-subtitulo {
-    font-size: 14px;
-    color: #aaa;
+    font-size: 16px; /* Letra más grande */
+    color: #ffffff; /* Blanco puro en lugar del gris #aaa */
     margin-bottom: 40px;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
+    font-weight: 300;
+    opacity: 0.9; /* Ligeramente opaco para que no compita con el título */
 }
 
 .simulador-grid-desarrollos {
@@ -88,12 +91,13 @@
 }
 
 .simulador-btn-desarrollo {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.08); /* Un poco más claro el fondo del botón */
+    border: 1px solid rgba(255, 255, 255, 0.25); /* Borde más definido */
     border-radius: 12px;
     padding: 20px;
-    color: white;
+    color: #ffffff; /* Texto 100% blanco */
     font-size: 18px;
+    font-weight: 600; /* Texto más gordito */
     letter-spacing: 2px;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -101,6 +105,12 @@
     flex-direction: column;
     align-items: center;
     gap: 15px;
+}
+
+/* Y si tienes spans dentro del botón, aseguramos que sean blancos */
+.simulador-btn-desarrollo span {
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8); /* Sombra dura para que no se pierda */
 }
 
 .simulador-btn-desarrollo:hover {
@@ -183,4 +193,283 @@
     border-radius: 30px;
     border: 1px solid rgba(255,255,255,0.2);
     pointer-events: none;
+}
+
+/* --- EXTENSIÓN PARA FASE INTERACTIVA Y SPLIT LAYOUT --- */
+
+.simulador-split-layout {
+    position: relative; /* 👈 Convierte esta caja en el "Ancla" para que el modal flote */
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* 👈 EL FIX: Esto corta cualquier borde de la imagen que intente salirse */
+    border-radius: 0 0 16px 16px; /* Empata con las esquinas redondeadas de tu contenedor principal */
+}
+
+.simulador-render-box {
+    position: absolute; /* El mapa ocupa todo el fondo, sin achicarse jamás */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden; 
+}
+
+/* Capa SVG (El mapa en sí) */
+.capa-svg-lotes {
+    width: 100%;
+    height: 100%;
+    pointer-events: auto;
+    /* La transición la pasamos a React para que no se atore al arrastrar */
+}
+
+/* Comportamiento del cursor y transiciones de los lotes interactivos */
+.lote-path {
+    cursor: pointer;
+    transition: fill 0.25s ease, stroke-width 0.2s ease;
+}
+
+.lote-path:hover {
+    fill: rgba(255, 255, 255, 0.5) !important;
+    stroke: #ffffff !important;
+    stroke-width: 0.8;
+}
+
+/* --- PANEL DE DETALLE FLOTANTE --- */
+.simulador-detalle-panel {
+    position: absolute; /* 👈 EL FIX: Ahora flota libremente como un modal encima del mapa */
+    top: 20px;
+    left: 20px; /* Alineado a la izquierda como en tu captura */
+    width: 380px;
+    max-height: calc(100% - 40px);
+    z-index: 10;
+    background: rgba(18, 18, 18, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    overflow-y: auto;
+    box-shadow: 10px 10px 30px rgba(0, 0, 0, 0.5); /* Sombra difuminada para separarlo del fondo */
+}
+
+/* ... (El resto de tus estilos para el interior del panel se quedan igual: .detalle-panel-header, .badge-estado, .card-info-tecnica, etc.) ... */
+
+.detalle-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 12px;
+}
+
+.detalle-panel-header h4 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 300;
+    letter-spacing: 1px;
+}
+
+/* Badges de estado */
+.badge-estado {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: 1px solid transparent;
+}
+
+.badge-estado.disponible {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.badge-estado.apartado {
+    background: rgba(234, 179, 8, 0.15);
+    color: #facc15;
+    border-color: rgba(234, 179, 8, 0.3);
+}
+
+/* Grid de tarjetas internas */
+.detalle-grid-cards {
+    display: flex;
+    gap: 15px;
+}
+
+.card-info-tecnica, .card-despiece-mini, .card-financiamiento, .card-formulario-lead {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 15px;
+}
+
+.card-info-tecnica { flex: 1.2; }
+.card-despiece-mini { flex: 1; }
+
+.card-info-tecnica h5, .card-despiece-mini h5, .card-financiamiento h5, .card-formulario-lead h5 {
+    margin: 0 0 10px 0;
+    font-size: 11px;
+    color: #888;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+}
+
+.precio-tag {
+    font-size: 18px;
+    color: #5cb82a;
+    font-weight: bold;
+    margin: 8px 0 0 0;
+}
+
+/* Caja del plano técnico interactivo */
+.placeholder-plano {
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    height: 70px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.placeholder-plano:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.placeholder-plano span {
+    font-size: 10px;
+    color: #aaa;
+}
+
+/* Botones de Financiamiento */
+.simulador-opciones-pago {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-pago-opt {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ccc;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-pago-opt.active, .btn-pago-opt:hover {
+    background: white;
+    color: black;
+    font-weight: bold;
+}
+
+/* Formulario */
+.simulador-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 10px;
+    color: white;
+    font-size: 13px;
+    margin-bottom: 8px;
+    box-sizing: border-box;
+}
+
+.simulador-input:focus {
+    border-color: #5cb82a;
+    outline: none;
+}
+
+.btn-enviar-lead {
+    width: 100%;
+    background: #5cb82a;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 12px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 5px;
+}
+
+.btn-enviar-lead:hover {
+    background: #4a9e20;
+}
+
+/* --- LIGHTBOX DEL DESPIECE --- */
+.lightbox-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85); /* Fondo muy oscuro para resaltar el plano */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 999; /* Por encima de absolutamente todo */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer; /* Indica que dar clic afuera lo cierra */
+}
+
+.btn-cerrar-lightbox {
+    position: absolute;
+    top: 30px;
+    right: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.btn-cerrar-lightbox:hover {
+    background: #ef4444; /* Rojo suave al hacer hover para indicar "Cerrar" */
+    border-color: #ef4444;
+    transform: scale(1.1);
+}
+
+.lightbox-content {
+    position: relative;
+    width: 80%;
+    max-width: 900px;
+    height: 85vh;
+    background: #111;
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: auto; /* Restaura el cursor normal dentro de la imagen */
+}
+
+.img-despiece-full {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Asegura que el plano nunca se recorte, se verá completo */
+    border-radius: 8px;
 }

@@ -220,3 +220,59 @@
     flex: 1; /* Rellena todo el resto del espacio */
     background: #e2e8f0; /* Color de espera mientras carga la API */
 }
+
+/* 👇 borrar esto de wix (animacion scroll) 👇 */
+.indicador-scroll-overlay {
+    position: absolute;
+    bottom: 15%;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none; /* 🚨 ¡CRÍTICO! Para que el clic/scroll pase al iframe */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    z-index: 10;
+    /* La animación total dura 8s y luego se queda oculta (forwards) */
+    animation: ocultarIndicador 8s forwards; 
+}
+
+.icono-manita {
+    width: 45px;
+    height: 45px;
+    color: rgba(255, 255, 255, 0.9);
+    filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.4));
+    animation: swipeScroll 2.5s infinite ease-in-out;
+}
+
+.texto-scroll {
+    color: white;
+    font-size: 13px;
+    font-weight: 300;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-shadow: 0px 2px 4px rgba(0,0,0,0.8);
+    opacity: 0.8;
+    animation: fadeInOut 2.5s infinite ease-in-out;
+}
+
+/* Animación del movimiento de la mano */
+@keyframes swipeScroll {
+    0% { transform: translateY(20px) scale(1); opacity: 0; }
+    20% { transform: translateY(20px) scale(0.9); opacity: 1; } /* Simula hacer "tap" en la pantalla */
+    70% { transform: translateY(-50px) scale(0.9); opacity: 1; } /* Arrastra hacia arriba */
+    100% { transform: translateY(-50px) scale(1); opacity: 0; } /* Suelta y desaparece */
+}
+
+/* Animación para el texto que acompaña */
+@keyframes fadeInOut {
+    0%, 100% { opacity: 0; }
+    30%, 70% { opacity: 0.8; }
+}
+
+/* Animación maestra para desaparecer todo después de unos segundos */
+@keyframes ocultarIndicador {
+    0%, 80% { opacity: 1; visibility: visible; }
+    100% { opacity: 0; visibility: hidden; }
+}
+/* 👆 hasta aqui 👆 */

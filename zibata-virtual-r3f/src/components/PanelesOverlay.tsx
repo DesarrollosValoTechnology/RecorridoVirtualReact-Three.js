@@ -43,8 +43,23 @@ export default function PanelesOverlay() {
                     <button className="btn-cerrar-panel" onClick={cerrarMenu}>✖</button>
                     <h2 className="form-title">{t["UI_MENU_ZONAS"]}</h2>
 
-                    <div className="menu-contenido" style={{ overflowY: 'auto', flexGrow: 1, paddingRight: '10px' }}>
-                        {Object.entries(categorias).map(([nombreCat, nodosCategoria]: any) => {
+<div className="menu-contenido" style={{ overflowY: 'auto', flexGrow: 1, paddingRight: '10px' }}>
+                        {Object.entries(categorias)
+                            // 🚨 AQUÍ ESTÁ LA MAGIA DEL ORDENAMIENTO
+                            .sort(([catA], [catB]) => {
+                                const ordenDeseado = ["Exteriores Zibatá", "Amenidades", "Parques", "Colegios", "Comercios"];
+                                
+                                let indexA = ordenDeseado.indexOf(catA);
+                                let indexB = ordenDeseado.indexOf(catB);
+                                
+                                // Si por error hay una categoría nueva en la BD que no está en la lista, la manda al final
+                                if (indexA === -1) indexA = 999;
+                                if (indexB === -1) indexB = 999;
+                                
+                                return indexA - indexB;
+                            })
+                            // 🚨 Y AQUÍ SIGUE TU CÓDIGO ORIGINAL
+                            .map(([nombreCat, nodosCategoria]: any) => {
                             const estaAbierta = categoriasExpandidas[nombreCat] !== false;
 
                             return (
