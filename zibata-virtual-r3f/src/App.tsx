@@ -20,14 +20,6 @@ import PanelEditorLabels from './components/PanelEditorLabels';
 import IndicadorFOV from './components/IndicadorFOV';
 import ControlZoomFOV from './components/ControlZoomFOV';
 import TooltipPreview from './components/TooltipPreview';
-import GaleriaRenders from './components/GaleriaRenders';
-import { Capacitor } from '@capacitor/core';
-import Simulador from './components/Simulador';
-import { Model as ShowroomNativo } from './components/ShowroomNativo';
-import Waypoint from './components/Waypoint';
-
-// 🚨 NUEVO: Importamos el menú del Showroom (Kiosco)
-import MenuPrevio from './components/MenuPrevio';
 
 function SincronizadorRadar({ controlsRef }: { controlsRef: any }) {
     const { camera } = useThree();
@@ -82,7 +74,6 @@ function App() {
     } = useTourStore();
 
     const controlsRef = useRef<any>(null);
-    const showroomControlsRef = useRef<any>(null);
     const [introTerminada, setIntroTerminada] = useState(false);
 
     // 🚨 1. LEEMOS EL ENTORNO EXACTAMENTE AL MONTAR EL COMPONENTE
@@ -90,22 +81,7 @@ function App() {
     const isAdmin = params.get('admin') === 'true';
     const { adminPanelActivo } = useTourStore();
 
-    const esEntornoKiosco = typeof window !== 'undefined' && (
-        Capacitor.isNativePlatform() || 
-        navigator.userAgent.toLowerCase().includes('electron') ||
-        /android|ipad|iphone|ipod/i.test(navigator.userAgent.toLowerCase())
-    );
-
-    // 🚨 2. LAZY STATE: Forzamos el menú si es Kiosco o Móvil
-    const [pantallaActiva, setPantallaActiva] = useState(() => {
-        if (isAdmin) return 'recorrido';
-        if (esEntornoKiosco) return 'menu';
-        return 'recorrido'; // Default para web normal
-    });
-
     const [logoTerminado, setLogoTerminado] = useState(false);
-
-    // ... (aquí siguen tus useEffects de Supabase y el Logo) ...
 
     // DISPARADOR DE SUPABASE
     useEffect(() => {
@@ -123,7 +99,7 @@ function App() {
         }
     }, [cargandoNodos, nodos, setNodoActual]);
 
-    // 🚨 FASE 1: SECUENCIA DEL LOGO (Común para Web y App)
+    // 🚨 FASE 1: SECUENCIA DEL LOGO
     useEffect(() => {
         if (cargandoNodos) return;
 
@@ -136,29 +112,26 @@ function App() {
             }
 
             const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-            await sleep(4500); // 2000 + 2500 originales
+            await sleep(4500); 
             setLogoVisible(false);
             await sleep(1500);
             setFadeActivo(false); 
-            setLogoTerminado(true); // Avisamos que el logo ya se quitó
+            setLogoTerminado(true); 
         }
         
         reproducirFaseLogo();
     }, [cargandoNodos, isAdmin, setLogoVisible, setFadeActivo]);
 
-    // 🚨 FASE 2: SECUENCIA TINY PLANET (Solo se dispara en el recorrido)
-        useEffect(() => {
-            if (isAdmin) {
-                setMostrarElementos3D(true);
-                setIsTransitioning(false);
-                setIntroTerminada(true);
-                return;
-            }
+    // 🚨 FASE 2: SECUENCIA TINY PLANET
+    useEffect(() => {
+        if (isAdmin) {
+            setMostrarElementos3D(true);
+            setIsTransitioning(false);
+            setIntroTerminada(true);
+            return;
+        }
 
-        if (!logoTerminado) return; // Esperamos a que el Logo termine
-        
-        // 🛑 EL FIX: Si no estamos explícitamente en 'recorrido', quédate congelado
-        if (pantallaActiva !== 'recorrido') return; 
+        if (!logoTerminado) return; 
 
         async function reproducirFaseTinyPlanet() {
             const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -171,7 +144,8 @@ function App() {
         }
 
         reproducirFaseTinyPlanet();
-    }, [logoTerminado, pantallaActiva, isAdmin, setIsTransitioning, setMostrarElementos3D]);
+    }, [logoTerminado, isAdmin, setIsTransitioning, setMostrarElementos3D]);
+
     // ACTUALIZAMOS EL MINIMAPA
     useEffect(() => {
         const info = nodos[nodoActual];
@@ -186,7 +160,7 @@ function App() {
 
         const reiniciarTemporizador = (e: Event) => {
             const target = e.target as HTMLElement;
-            if (target && target.closest('button, .panel-contenido, .herramientas-pill, .ui-bottom-bar-pill, .menu-kiosco-btn')) {
+            if (target && target.closest('button, .panel-contenido, .herramientas-pill, .ui-bottom-bar-pill')) {
                 return;
             }
 
@@ -210,33 +184,6 @@ function App() {
         };
     }, []);
 
-// 🚨 AQUÍ PEGAS EL ESCUCHADOR DE MENSAJES DE UNITY 🚨
-    useEffect(() => {
-        const escucharAUnity = () => {
-            console.log("¡React escuchó a Unity! Iniciando transición suave...");
-            
-            // 1. Encendemos el fade para que la pantalla se ponga negra poco a poco
-            setFadeActivo(true); 
-
-            // 2. Esperamos 600ms a que termine la animación de oscurecer
-            setTimeout(() => {
-                // 3. Ya en la oscuridad, cambiamos la pantalla sin que el usuario note el brinco
-                setPantallaActiva('recorrido');
-                
-                // 4. Le damos a React medio segundo para cargar el 3D, y quitamos el fondo negro
-                setTimeout(() => {
-                    setFadeActivo(false);
-                }, 500);
-            }, 600);
-        };
-
-        window.addEventListener('AbreMasterPlanDesdeUnity', escucharAUnity);
-
-        return () => {
-            window.removeEventListener('AbreMasterPlanDesdeUnity', escucharAUnity);
-        };
-    }, [setFadeActivo]);
-    
     // PANTALLA DE CARGA PREVIA PARA EVITAR ERRORES 3D
     if (cargandoNodos) {
         return (
@@ -267,114 +214,21 @@ function App() {
         {/* --- 1. SIEMPRE VISIBLE AL INICIO --- */}
         <PantallaCarga />
 
-{/* --- 2. EL MENÚ DEL SHOWROOM --- */}
-        {/* 🚨 FIX: Quitamos la condición "logoTerminado &&" y agregamos backgroundColor: '#000' 
-            para que el menú cargue escondido detrás del logo y bloquee el 3D al 100% */}
-            {pantallaActiva === 'menu' && (
-                <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 100, backgroundColor: '#000' }}>
-                    <MenuPrevio 
-                        onIrAlRecorrido={() => setPantallaActiva('recorrido')} 
-                        onIrAGaleria={() => setPantallaActiva('galeria')}
-                        onIrAShowroomUnity={() => setPantallaActiva('showroomUnity')}
-                        onIrASimulador={() => setPantallaActiva('simulador')}
-                    />
-                </div>
-            )}
+        {/* --- 2. UI DEL TOUR (Siempre Activa ahora) --- */}
+        <OverlayUI 
+            esAppEscritorio={false} // Siempre será falso porque esta es la versión web
+            onVolverAlMenu={() => window.location.reload()} // Como no hay menú local, un recargo limpio por si acaso
+        />
+        <PanelesOverlay />
+        <TooltipPreview />
+        <IndicadorFOV />
 
-            {/* 🚨 NUEVA PANTALLA: SIMULADOR 🚨 */}
-            {pantallaActiva === 'simulador' && (
-                <Simulador onCerrar={() => setPantallaActiva('menu')} />
-            )}
-        {/* 🚨 FIX: También le quitamos el "logoTerminado &&" a la Galería y le ponemos fondo oscuro por si acaso */}
-            {pantallaActiva === 'galeria' && (
-                <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 100, backgroundColor: '#000' }}>
-                    <GaleriaRenders onVolverAlMenu={() => setPantallaActiva('menu')} />
-                </div>
-            )}
-
-{/* 🚨 PANTALLA NUEVA: SHOWROOM DE UNITY (PRONTO R3F) 🚨 */}
-            {pantallaActiva === 'showroomUnity' && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 100, backgroundColor: '#000' }}>
-                    
-                    {/* BOTÓN REACT PARA CERRAR (Este lo dejamos intacto) */}
-                    <div style={{ position: 'absolute', top: '30px', left: '30px', zIndex: 110 }}>
-                        <button onClick={() => setPantallaActiva('menu')} style={{
-                                display: 'flex', alignItems: 'center', gap: '10px',
-                                backgroundColor: 'rgba(15, 15, 15, 0.7)', backdropFilter: 'blur(12px)',
-                                color: 'white', padding: '12px 24px', borderRadius: '9999px',
-                                border: '1px solid rgba(255, 255, 255, 0.15)', fontSize: '13px', fontWeight: 600,
-                                letterSpacing: '0.05em', cursor: 'pointer', transition: 'all 0.3s ease',
-                                boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(40, 40, 40, 0.9)'}
-                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(15, 15, 15, 0.7)'}
-                        >
-                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                            VOLVER AL MENÚ
-                        </button>
-                    </div>
-
-                    {/* 🛑 COMENTAMOS EL IFRAME DE UNITY POR AHORA
-                    <iframe 
-                        src="/unity-build/index.html" 
-                        style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
-                        title="Showroom Interactivo"
-                    />
-                    */}
-
-{/* 🚨 EL NUEVO SHOWROOM NATIVO 🚨 */}
-                    <div style={{ width: '100%', height: '100%' }}>
-                        <Canvas camera={{ position: [0, 1.6, 5], fov: 60 }}>
-                        <Suspense fallback={null}>
-                            <Environment preset="city" /> 
-                            
-                            {/* 🚨 NUEVOS CONTROLES CINEMÁTICOS (Exclusivos del Showroom) */}
-                            <CameraControls ref={showroomControlsRef} makeDefault />
-                            
-                            {/* ¡Completamente limpio! */}
-                            <ShowroomNativo />
-                            
-                            {/* TUS WAYPOINTS */}
-                            <Waypoint 
-                                posicion={[0, 0, 0]} 
-                                objetivoCámara={[0, 1.6, 0]} 
-                                controlsRef={showroomControlsRef} 
-                            />
-                            
-                            <Waypoint 
-                                posicion={[4, 0, -3]} 
-                                objetivoCámara={[0, 1.6, -3]} 
-                                controlsRef={showroomControlsRef} 
-                            />
-
-                        </Suspense>
-                    </Canvas>
-                    </div>
-
-                </div>
-            )}
-
-            {/* --- 3. UI DEL TOUR --- */}
-                {pantallaActiva === 'recorrido' && (
-                    <>
-                        <OverlayUI 
-                            esAppEscritorio={esEntornoKiosco} // 👈 ¡Cambia esto también!
-                            onVolverAlMenu={() => setPantallaActiva('menu')} 
-                        />
-                <PanelesOverlay />
-                
-                <TooltipPreview />
-                <IndicadorFOV />
-            </>
-        )}
-
-        {/* --- 4. MOTOR 3D (Se monta siempre en el fondo para precargar gráficos) --- */}
+        {/* --- 3. MOTOR 3D --- */}
         <Canvas
             camera={{ position: [-0.001, 250, 0.001], fov: 140 }}
             style={{ position: 'absolute', top: 0, left: 0, zIndex: 1 }}
         >
             <XR store={xrStore}>
-                {/* La animación solo se dispara cuando el Effect de Fase 2 lo ordena */}
                 <IntroAnimacion />
                 <SincronizadorRadar controlsRef={controlsRef} />
                 <ControladorRotacion controlsRef={controlsRef} introTerminada={introTerminada} />
