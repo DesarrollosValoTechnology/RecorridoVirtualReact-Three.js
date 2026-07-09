@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { CSSProperties, ChangeEvent } from 'react';
 import { useTourStore } from '../store/useTourStore';
 import { supabase } from '../supabase/client';
+import { convertirAWebP } from '../utils/imagenAWebp';
 
 export default function PanelEditarNodo() {
     const { nodos, nodoActual, actualizarNodoActual, setAdminPanelActivo } = useTourStore();
@@ -34,11 +35,10 @@ export default function PanelEditarNodo() {
         if (!e.target.files?.[0]) return;
         setSubiendoMini(true);
         try {
-            const file = e.target.files[0];
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${nodoActual}-thumb-${Math.random().toString(36).substring(7)}.${fileExt}`;
+            const archivoWebp = await convertirAWebP(e.target.files[0], { calidad: 0.75, maxAncho: 800, maxAlto: 600 });
+            const fileName = `${nodoActual}-thumb-${Math.random().toString(36).substring(7)}.webp`;
 
-            const { error } = await supabase.storage.from('fotos_tour').upload(fileName, file);
+            const { error } = await supabase.storage.from('fotos_tour').upload(fileName, archivoWebp);
             if (error) throw error;
 
             const { data } = supabase.storage.from('fotos_tour').getPublicUrl(fileName);

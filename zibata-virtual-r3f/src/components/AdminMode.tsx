@@ -2,12 +2,14 @@ import { useState, useMemo } from 'react';
 import type { CSSProperties, ChangeEvent, FormEvent } from 'react';
 import { supabase } from '../supabase/client';
 import { useTourStore } from '../store/useTourStore';
+import { convertirAWebP } from '../utils/imagenAWebp';
 
 export default function AdminMode() {
     const { setAdminPanelActivo, cargarNodos, nodos } = useTourStore();
     const [cargando, setCargando] = useState(false);
     const [mensaje, setMensaje] = useState('');
-    
+    const [procesandoImagen, setProcesandoImagen] = useState(false);
+
     // 1. ESTADOS PARA LOS ARCHIVOS
     const [archivo360, setArchivo360] = useState<File | null>(null);
     const [archivoMini, setArchivoMini] = useState<File | null>(null);
@@ -38,12 +40,37 @@ export default function AdminMode() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleFile360Change = (e: ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files.length > 0) setArchivo360(e.target.files[0]);
+    const handleFile360Change = async (e: ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        setProcesandoImagen(true);
+        setMensaje('Convirtiendo foto 360 a WebP...');
+        try {
+            // Sin maxAncho/maxAlto: no recortamos resolución del panorama, solo recomprimimos
+            const archivoWebp = await convertirAWebP(e.target.files[0], { calidad: 0.82 });
+            setArchivo360(archivoWebp);
+            setMensaje('');
+        } catch (error) {
+            console.error(error);
+            setMensaje('❌ No se pudo procesar la foto 360');
+        } finally {
+            setProcesandoImagen(false);
+        }
     };
 
-    const handleMiniChange = (e: ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files.length > 0) setArchivoMini(e.target.files[0]);
+    const handleMiniChange = async (e: ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        setProcesandoImagen(true);
+        setMensaje('Convirtiendo miniatura a WebP...');
+        try {
+            const archivoWebp = await convertirAWebP(e.target.files[0], { calidad: 0.75, maxAncho: 800, maxAlto: 600 });
+            setArchivoMini(archivoWebp);
+            setMensaje('');
+        } catch (error) {
+            console.error(error);
+            setMensaje('❌ No se pudo procesar la miniatura');
+        } finally {
+            setProcesandoImagen(false);
+        }
     };
 
     // Manejador del desplegable de categorías
@@ -208,12 +235,14 @@ export default function AdminMode() {
 
                 <div style={{ display: 'flex', gap: '15px', marginTop: '10px' }}>
                     <div style={{ flex: 1 }}>
-                        <label style={{...labelStyle, color: '#e2a74a'}}>FOTO 360 (.WEBP)</label>
-                        <input type="file" accept=".webp" required style={{...inputPremiumStyle, padding: '7px', fontSize: '11px'}} onChange={handleFile360Change} />
+                        <label style={{...labelStyle, color: '#e2a74a'}}>FOTO 360 (cualquier formato)</label>
+                        <input type="file" accept="image/*" required disabled={procesandoImagen} style={{...inputPremiumStyle, padding: '7px', fontSize: '11px'}} onChange={handleFile360Change} />
+                        {archivo360 && <p style={{ fontSize: '10px', color: '#5cb82a', margin: '4px 0 0' }}>✓ {archivo360.name} ({(archivo360.size / 1024).toFixed(0)} KB)</p>}
                     </div>
                     <div style={{ flex: 1 }}>
-                        <label style={{...labelStyle, color: '#4a90e2'}}>MINIATURA (400x300)</label>
-                        <input type="file" accept=".webp,.jpg" required style={{...inputPremiumStyle, padding: '7px', fontSize: '11px'}} onChange={handleMiniChange} />
+                        <label style={{...labelStyle, color: '#4a90e2'}}>MINIATURA (cualquier formato)</label>
+                        <input type="file" accept="image/*" required disabled={procesandoImagen} style={{...inputPremiumStyle, padding: '7px', fontSize: '11px'}} onChange={handleMiniChange} />
+                        {archivoMini && <p style={{ fontSize: '10px', color: '#5cb82a', margin: '4px 0 0' }}>✓ {archivoMini.name} ({(archivoMini.size / 1024).toFixed(0)} KB)</p>}
                     </div>
                 </div>
 
@@ -228,14 +257,14 @@ export default function AdminMode() {
                     </div>
                 </div>
 
-                <button 
-                    type="submit" 
-                    disabled={cargando}
+                <button
+                    type="submit"
+                    disabled={cargando || procesandoImagen}
                     style={btnPremiumStyle}
                     onMouseOver={(e) => !cargando && (e.currentTarget.style.backgroundColor = '#6bd132')}
                     onMouseOut={(e) => !cargando && (e.currentTarget.style.backgroundColor = '#5cb82a')}
                 >
-                    {cargando ? 'Subiendo archivos e insertando...' : 'Guardar Escena'}
+                    {cargando ? 'Subiendo archivos e insertando...' : procesandoImagen ? 'Procesando imagen...' : 'Guardar Escena'}
                 </button>
             </form>
 
