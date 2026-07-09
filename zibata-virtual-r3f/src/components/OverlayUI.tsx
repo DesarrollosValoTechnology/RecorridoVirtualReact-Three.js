@@ -116,15 +116,15 @@ export default function OverlayUI({ esAppEscritorio, isAdmin, onVolverAlMenu }: 
 
                     <button className="btn-icon" onClick={store.toggleRotacion} title="Girar Cámara">
                         {store.userQuiereRotacion ? (
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
                         ) : (
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff4444" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><line x1="2" y1="2" x2="22" y2="22"></line></svg>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15.686 15A14.5 14.5 0 0 1 12 22a14.5 14.5 0 0 1 0-20 10 10 0 1 0 9.542 13"/><path d="M2 12h8.5"/><path d="M20 6V4a2 2 0 1 0-4 0v2"/><rect width="8" height="5" x="14" y="6" rx="1"/></svg>
                         )}
                     </button>
 
                     {!isAdmin && (
                         <button className="btn-icon" onClick={cambiarIdioma} title="Cambiar Idioma">
-                            {idiomaActual === 'es' ? 'EN' : 'ES'}
+                            {idiomaActual === 'es' ? 'ES' : 'EN'}
                         </button>
                     )}
 

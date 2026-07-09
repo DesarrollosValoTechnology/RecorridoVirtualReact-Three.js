@@ -1,6 +1,7 @@
 // src/store/useTourStore.ts
 import { create } from 'zustand';
 import { supabase } from '../supabase/client';
+import { generarVersionBlur } from '../utils/imagenAWebp';
 
 const getInitialNode = () => {
     const params = new URLSearchParams(window.location.search);
@@ -41,6 +42,7 @@ interface TourState {
     actualizarNodoActual: (cambios: any) => Promise<void>;
     borrarNodoActual: () => Promise<{ ok: boolean; error?: string }>;
     borrarNodo: (id: string) => Promise<{ ok: boolean; error?: string }>;
+    generarBlurParaNodo: (id: string) => Promise<{ ok: boolean; error?: string }>;
     actualizarPosicionHotspot: (id: string, x: number, y: number, z: number) => Promise<void>;
     crearNuevoHotspot: (nodoId?: string) => Promise<void>;
     hotspotSeleccionadoId: string | null;
@@ -263,6 +265,35 @@ export const useTourStore = create<TourState>((set, get) => ({
     },
 
     borrarNodoActual: async () => get().borrarNodo(get().nodoActual),
+
+    // Genera y sube la versión blur de una foto 360 YA existente (sin necesidad de volver a subirla).
+    // Sirve para "rellenar" escenas antiguas que se crearon antes de tener esta función.
+    generarBlurParaNodo: async (id) => {
+        const nodo = get().nodos[id];
+        if (!nodo?.archivo) return { ok: false, error: 'El nodo no tiene foto 360' };
+
+        try {
+            const respuesta = await fetch(nodo.archivo);
+            if (!respuesta.ok) throw new Error('No se pudo descargar la foto original');
+            const blob = await respuesta.blob();
+            const archivoOriginal = new File([blob], 'original', { type: blob.type || 'image/webp' });
+
+            const archivoBlur = await generarVersionBlur(archivoOriginal);
+            const nombre = `${id}-360-blur-${Math.random().toString(36).substring(7)}.webp`;
+
+            const { error: errUpload } = await supabase.storage.from('fotos_tour').upload(nombre, archivoBlur);
+            if (errUpload) throw errUpload;
+            const { data } = supabase.storage.from('fotos_tour').getPublicUrl(nombre);
+
+            const { error: errUpdate } = await supabase.from('nodos').update({ archivo_blur_url: data.publicUrl }).eq('id', id);
+            if (errUpdate) throw errUpdate;
+
+            return { ok: true };
+        } catch (error: any) {
+            console.error(`Error generando blur para ${id}:`, error);
+            return { ok: false, error: error.message };
+        }
+    },
 
     // --- NAVEGACIÓN ---
     setNodoActual:        (id)  => set({ nodoActual: id }),

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import type { CSSProperties, ChangeEvent, FormEvent } from 'react';
 import { supabase } from '../supabase/client';
 import { useTourStore } from '../store/useTourStore';
-import { convertirAWebP } from '../utils/imagenAWebp';
+import { convertirAWebP, generarVersionBlur } from '../utils/imagenAWebp';
 
 export default function AdminMode() {
     const { setAdminPanelActivo, cargarNodos, nodos } = useTourStore();
@@ -12,6 +12,7 @@ export default function AdminMode() {
 
     // 1. ESTADOS PARA LOS ARCHIVOS
     const [archivo360, setArchivo360] = useState<File | null>(null);
+    const [archivo360Blur, setArchivo360Blur] = useState<File | null>(null);
     const [archivoMini, setArchivoMini] = useState<File | null>(null);
 
     // 2. ESTADOS PARA CATEGORÍAS
@@ -45,9 +46,14 @@ export default function AdminMode() {
         setProcesandoImagen(true);
         setMensaje('Convirtiendo foto 360 a WebP...');
         try {
+            const original = e.target.files[0];
             // Sin maxAncho/maxAlto: no recortamos resolución del panorama, solo recomprimimos
-            const archivoWebp = await convertirAWebP(e.target.files[0], { calidad: 0.82 });
+            const [archivoWebp, archivoBlur] = await Promise.all([
+                convertirAWebP(original, { calidad: 0.82 }),
+                generarVersionBlur(original),
+            ]);
             setArchivo360(archivoWebp);
+            setArchivo360Blur(archivoBlur);
             setMensaje('');
         } catch (error) {
             console.error(error);
@@ -85,7 +91,7 @@ export default function AdminMode() {
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        if (!archivo360 || !archivoMini) {
+        if (!archivo360 || !archivoMini || !archivo360Blur) {
             setMensaje('❌ Por favor selecciona ambas imágenes (360 y Miniatura)');
             return;
         }
@@ -103,6 +109,12 @@ export default function AdminMode() {
             if (err360) throw err360;
             const { data: url360 } = supabase.storage.from('fotos_tour').getPublicUrl(name360);
 
+            // --- PASO 1.5: Subir versión Blur (placeholder ligero mientras carga la de alta res) ---
+            const nameBlur = `${formData.id}-360-blur-${Math.random().toString(36).substring(7)}.webp`;
+            const { error: errBlur } = await supabase.storage.from('fotos_tour').upload(nameBlur, archivo360Blur);
+            if (errBlur) throw errBlur;
+            const { data: urlBlur } = supabase.storage.from('fotos_tour').getPublicUrl(nameBlur);
+
             // --- PASO 2: Subir Miniatura ---
             const nameMini = `${formData.id}-thumb-${Math.random().toString(36).substring(7)}.webp`;
             const { error: errMini } = await supabase.storage.from('fotos_tour').upload(nameMini, archivoMini);
@@ -119,6 +131,7 @@ export default function AdminMode() {
                     titulo: formData.titulo,
                     categoria: categoriaFinal, // 👈 Se guarda la categoría dinámica
                     foto_url: url360.publicUrl,
+                    archivo_blur_url: urlBlur.publicUrl,
                     miniatura_url: urlMini.publicUrl,
                     mapa_x: Number(formData.mapa_x),
                     mapa_y: Number(formData.mapa_y),

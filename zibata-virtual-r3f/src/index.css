@@ -16,6 +16,8 @@
    ========================================== */
 *, *::before, *::after {
     box-sizing: border-box;
+    /* Quita el "flash" gris/azul que Chrome y Safari ponen al tocar botones en móvil */
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* En el bloque base, fuera del media query */
@@ -28,6 +30,25 @@ body, html, #root {
     touch-action: none;
     background-color: #000000;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    /* Evita que un arrastre accidental (mouse o dedo) seleccione/resalte texto de la UI */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    /* iOS: evita el menú de "Copiar/Seleccionar todo" al mantener presionado */
+    -webkit-touch-callout: none;
+}
+
+/* Los campos de texto SÍ deben poder seleccionarse para que se pueda escribir y copiar normalmente */
+input, textarea, [contenteditable="true"] {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    user-select: text;
+}
+
+/* Dificulta arrastrar/copiar imágenes y el canvas 3D (foto 360, miniaturas, logos, etc.) */
+img, canvas {
+    -webkit-user-drag: none;
+    -webkit-touch-callout: none; /* iOS: sin menú de "Guardar imagen" al mantener presionado */
 }
 
 canvas {

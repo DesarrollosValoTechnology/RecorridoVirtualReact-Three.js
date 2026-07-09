@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { CSSProperties, ChangeEvent } from 'react';
 import { useTourStore } from '../store/useTourStore';
 import { supabase } from '../supabase/client';
-import { convertirAWebP } from '../utils/imagenAWebp';
+import { convertirAWebP, generarVersionBlur } from '../utils/imagenAWebp';
 
 export default function PanelEditarNodo() {
     const { nodos, nodoActual, actualizarNodoActual, setAdminPanelActivo, cargarNodos, borrarNodoActual } = useTourStore();
@@ -58,15 +58,24 @@ export default function PanelEditarNodo() {
         if (!e.target.files?.[0]) return;
         setSubiendo360(true);
         try {
+            const original = e.target.files[0];
             // Sin maxAncho/maxAlto: no recortamos resolución del panorama, solo recomprimimos
-            const archivoWebp = await convertirAWebP(e.target.files[0], { calidad: 0.82 });
-            const fileName = `${nodoActual}-360-${Math.random().toString(36).substring(7)}.webp`;
+            const [archivoWebp, archivoBlur] = await Promise.all([
+                convertirAWebP(original, { calidad: 0.82 }),
+                generarVersionBlur(original),
+            ]);
 
+            const fileName = `${nodoActual}-360-${Math.random().toString(36).substring(7)}.webp`;
             const { error } = await supabase.storage.from('fotos_tour').upload(fileName, archivoWebp);
             if (error) throw error;
-
             const { data } = supabase.storage.from('fotos_tour').getPublicUrl(fileName);
-            await actualizarNodoActual({ foto_url: data.publicUrl });
+
+            const nameBlur = `${nodoActual}-360-blur-${Math.random().toString(36).substring(7)}.webp`;
+            const { error: errBlur } = await supabase.storage.from('fotos_tour').upload(nameBlur, archivoBlur);
+            if (errBlur) throw errBlur;
+            const { data: dataBlur } = supabase.storage.from('fotos_tour').getPublicUrl(nameBlur);
+
+            await actualizarNodoActual({ foto_url: data.publicUrl, archivo_blur_url: dataBlur.publicUrl });
             await cargarNodos(); // Refresco completo para que la esfera 3D muestre la nueva foto
             alert("✅ ¡Foto 360 actualizada correctamente!");
         } catch (error) {

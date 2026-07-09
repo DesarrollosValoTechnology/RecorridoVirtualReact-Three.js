@@ -73,14 +73,17 @@ function FilaLabel({ label, onGuardar, onBorrar }: { label: any; onGuardar: (tex
 
 export default function AdminExplorador() {
     const {
-        nodos, nodoActual, setAdminPanelActivo, cargarNodo,
+        nodos, nodoActual, setAdminPanelActivo, cargarNodo, cargarNodos,
         actualizarPropiedadesHotspot, borrarHotspot, crearNuevoHotspot,
         actualizarPropiedadesLabel, borrarLabel, crearNuevoLabel,
-        borrarNodo,
+        borrarNodo, generarBlurParaNodo,
     } = useTourStore();
 
     const [busqueda, setBusqueda] = useState('');
     const [expandido, setExpandido] = useState<Record<string, boolean>>({});
+    const [generandoBlur, setGenerandoBlur] = useState(false);
+    const [progresoBlur, setProgresoBlur] = useState('');
+    const [generandoBlurId, setGenerandoBlurId] = useState<string | null>(null);
 
     const opcionesDestino = useMemo(
         () => Object.entries(nodos).map(([id, info]: any) => ({ id, titulo: info.ui?.titulo || id })),
@@ -96,7 +99,43 @@ export default function AdminExplorador() {
             .sort(([, a]: any, [, b]: any) => (a.ui?.titulo || '').localeCompare(b.ui?.titulo || ''));
     }, [nodos, busqueda]);
 
+    const nodosSinBlur = useMemo(
+        () => Object.entries(nodos).filter(([, info]: any) => info.archivo && info.archivoBlur === info.archivo),
+        [nodos]
+    );
+
     const toggleExpandido = (id: string) => setExpandido((prev) => ({ ...prev, [id]: !prev[id] }));
+
+    const handleGenerarBlur = async (id: string) => {
+        setGenerandoBlurId(id);
+        try {
+            const resultado = await generarBlurParaNodo(id);
+            if (!resultado.ok) alert(`❌ Error al generar el blur: ${resultado.error}`);
+            else await cargarNodos();
+        } finally {
+            setGenerandoBlurId(null);
+        }
+    };
+
+    const handleGenerarBlurFaltantes = async () => {
+        if (nodosSinBlur.length === 0) return;
+        const ok = window.confirm(`Se generará automáticamente la versión blur para ${nodosSinBlur.length} escena(s) que no la tienen. ¿Continuar?`);
+        if (!ok) return;
+
+        setGenerandoBlur(true);
+        try {
+            for (let i = 0; i < nodosSinBlur.length; i++) {
+                const [id] = nodosSinBlur[i];
+                setProgresoBlur(`${i + 1}/${nodosSinBlur.length}`);
+                const resultado = await generarBlurParaNodo(id);
+                if (!resultado.ok) console.error(`No se pudo generar blur para ${id}:`, resultado.error);
+            }
+            await cargarNodos();
+        } finally {
+            setGenerandoBlur(false);
+            setProgresoBlur('');
+        }
+    };
 
     const handleBorrarNodo = async (id: string, titulo: string) => {
         const ok = window.confirm(
@@ -134,6 +173,22 @@ export default function AdminExplorador() {
                     onChange={(e) => setBusqueda(e.target.value)}
                     style={{ ...inputStyle, marginTop: '15px' }}
                 />
+
+                {nodosSinBlur.length > 0 && (
+                    <button
+                        onClick={handleGenerarBlurFaltantes}
+                        disabled={generandoBlur}
+                        style={{
+                            width: '100%', marginTop: '10px', padding: '9px', borderRadius: '10px',
+                            border: '1px solid rgba(74, 144, 226, 0.3)', backgroundColor: 'rgba(74, 144, 226, 0.12)',
+                            color: '#4a90e2', cursor: generandoBlur ? 'not-allowed' : 'pointer', fontSize: '12px', fontWeight: 600
+                        }}
+                    >
+                        {generandoBlur
+                            ? `Generando blur (${progresoBlur})...`
+                            : `🌫️ Generar blur faltante (${nodosSinBlur.length} escena${nodosSinBlur.length === 1 ? '' : 's'})`}
+                    </button>
+                )}
             </div>
 
             <div style={{ overflowY: 'auto', padding: '15px 24px 24px' }}>
@@ -146,6 +201,7 @@ export default function AdminExplorador() {
                     const abierto = !!expandido[id];
                     const hotspots = info.hotspots || [];
                     const labels = info.labels || [];
+                    const sinBlur = !!info.archivo && info.archivoBlur === info.archivo;
 
                     return (
                         <div key={id} style={tarjetaStyle(esActivo)}>
@@ -161,6 +217,16 @@ export default function AdminExplorador() {
                                     </div>
                                     <div style={{ fontSize: '10px', color: '#888' }}>{hotspots.length} hotspots · {labels.length} etiquetas</div>
                                 </div>
+                                {sinBlur && (
+                                    <button
+                                        title="Sin versión blur: generarla a partir de la foto 360 actual"
+                                        onClick={() => handleGenerarBlur(id)}
+                                        disabled={generandoBlurId === id}
+                                        style={{ ...miniBtnStyle, color: '#4a90e2' }}
+                                    >
+                                        {generandoBlurId === id ? '⏳' : '🌫️'}
+                                    </button>
+                                )}
                                 <button title="Ir a esta escena" onClick={() => cargarNodo(id)} style={miniBtnStyle}>➜</button>
                                 <button title={abierto ? 'Contraer' : 'Ver hotspots y etiquetas'} onClick={() => toggleExpandido(id)} style={miniBtnStyle}>{abierto ? '▲' : '▼'}</button>
                                 <button title="Eliminar nodo" onClick={() => handleBorrarNodo(id, info.ui?.titulo || id)} style={{ ...miniBtnStyle, color: '#ff4d4d' }}>🗑</button>
