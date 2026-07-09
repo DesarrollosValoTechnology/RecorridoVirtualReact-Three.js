@@ -43,6 +43,17 @@ export default function AdminSidebar() {
             border: '1px solid rgba(255, 255, 255, 0.08)',
             boxShadow: '0 10px 40px rgba(0, 0, 0, 0.6)'
         }}>
+            {/* 0. EXPLORADOR: LISTA DE NODOS, HOTSPOTS Y LABELS (Morado) */}
+            <button
+                title="Explorador de Escenas"
+                style={getBtnStyle(adminPanelActivo === 'explorador', hoveredBtn === 'explorador', '#a78bfa')}
+                onMouseEnter={() => setHoveredBtn('explorador')}
+                onMouseLeave={() => setHoveredBtn(null)}
+                onClick={() => togglePanel('explorador')}
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+            </button>
+
             {/* 1. AÑADIR NUEVO NODO (Verde) */}
             <button 
                 title="Añadir Nuevo Nodo"

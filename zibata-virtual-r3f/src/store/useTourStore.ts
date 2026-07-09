@@ -35,23 +35,23 @@ interface TourState {
     cargarNodo: (id: string) => void;
     tooltipHover: { titulo: string, miniatura: string, x: number, y: number } | null;
     setTooltipHover: (data: any) => void;
-    adminPanelActivo: 'nuevoNodo' | 'editorHotspots' | 'editarNodo' | 'editorLabels' | null;
-    setAdminPanelActivo: (panel: 'nuevoNodo' | 'editorHotspots' | 'editarNodo' | 'editorLabels' | null) => void;
+    adminPanelActivo: 'nuevoNodo' | 'editorHotspots' | 'editarNodo' | 'editorLabels' | 'explorador' | null;
+    setAdminPanelActivo: (panel: 'nuevoNodo' | 'editorHotspots' | 'editarNodo' | 'editorLabels' | 'explorador' | null) => void;
     actualizarPosicionLabel: (id: string, x: number, y: number, z: number) => Promise<void>;
     actualizarNodoActual: (cambios: any) => Promise<void>;
+    borrarNodoActual: () => Promise<{ ok: boolean; error?: string }>;
+    borrarNodo: (id: string) => Promise<{ ok: boolean; error?: string }>;
     actualizarPosicionHotspot: (id: string, x: number, y: number, z: number) => Promise<void>;
-    crearNuevoHotspot: () => Promise<void>;
+    crearNuevoHotspot: (nodoId?: string) => Promise<void>;
     hotspotSeleccionadoId: string | null;
     setHotspotSeleccionadoId: (id: string | null) => void;
     actualizarPropiedadesHotspot: (id: string, destino: string, tipo: string) => Promise<void>;
     borrarHotspot: (id: string) => Promise<void>;
     labelSeleccionadoId: string | null;
     setLabelSeleccionadoId: (id: string | null) => void;
-    crearNuevoLabel: () => Promise<void>;
+    crearNuevoLabel: (nodoId?: string) => Promise<void>;
     actualizarPropiedadesLabel: (id: string, campo: string, valor: any) => Promise<void>;
     borrarLabel: (id: string) => Promise<void>;
-    fovActual: number;
-    setFovActual: (fov: number) => void;
 }
 
 export const useTourStore = create<TourState>((set, get) => ({
@@ -149,8 +149,8 @@ export const useTourStore = create<TourState>((set, get) => ({
         if (error) console.error("Error al guardar posición:", error);
     },
 
-    crearNuevoHotspot: async () => {
-        const nodoOrigen = get().nodoActual;
+    crearNuevoHotspot: async (nodoId) => {
+        const nodoOrigen = nodoId || get().nodoActual;
         const { error } = await supabase
             .from('hotspots')
             .insert([{ nodo_origen_id: nodoOrigen, nodo_destino_id: nodoOrigen, x: 0, y: 0, z: -50, tipo: 'pasos' }]);
@@ -158,15 +158,19 @@ export const useTourStore = create<TourState>((set, get) => ({
     },
 
     actualizarPropiedadesHotspot: async (id, destino, tipo) => {
-        // Optimista local
+        // Optimista local: buscamos el hotspot en TODOS los nodos (puede no ser el activo, ej. desde el Explorador)
         const nodosActuales = { ...get().nodos };
-        const nodoId = get().nodoActual;
-        if (nodosActuales[nodoId]) {
-            nodosActuales[nodoId].hotspots = nodosActuales[nodoId].hotspots.map((h: any) =>
-                h.id === id ? { ...h, destino, tipo } : h
-            );
-            set({ nodos: nodosActuales });
+        for (const nId of Object.keys(nodosActuales)) {
+            const nodo = nodosActuales[nId];
+            if (nodo.hotspots?.some((h: any) => h.id === id)) {
+                nodosActuales[nId] = {
+                    ...nodo,
+                    hotspots: nodo.hotspots.map((h: any) => (h.id === id ? { ...h, destino, tipo } : h)),
+                };
+                break;
+            }
         }
+        set({ nodos: nodosActuales });
         // Nube
         const { error } = await supabase.from('hotspots').update({ nodo_destino_id: destino, tipo }).eq('id', id);
         if (error) console.error("Error al actualizar hotspot:", error);
@@ -206,6 +210,60 @@ export const useTourStore = create<TourState>((set, get) => ({
         }
     },
 
+    // --- EDITOR: BORRAR NODO ---
+    // Genérico: borra cualquier nodo por id (lo usa tanto el panel de config del nodo activo como el Explorador)
+    borrarNodo: async (id) => {
+        const nodoInfo = get().nodos[id];
+        const eraElActivo = get().nodoActual === id;
+
+        try {
+            // 1. Limpiar hotspots que salen de este nodo o que otros nodos usan para llegar a él
+            const { error: errHsOrigen } = await supabase.from('hotspots').delete().eq('nodo_origen_id', id);
+            if (errHsOrigen) throw errHsOrigen;
+            const { error: errHsDestino } = await supabase.from('hotspots').delete().eq('nodo_destino_id', id);
+            if (errHsDestino) throw errHsDestino;
+
+            // 2. Limpiar labels del nodo
+            const { error: errLabels } = await supabase.from('labels').delete().eq('nodo_id', id);
+            if (errLabels) throw errLabels;
+
+            // 3. Borrar archivos de Storage asociados (best-effort, no bloquea el borrado si falla)
+            const rutasArchivo = [nodoInfo?.archivo, nodoInfo?.archivoBlur, nodoInfo?.ui?.miniatura]
+                .filter((url): url is string => typeof url === 'string' && url.includes('/fotos_tour/'))
+                .map((url) => url.split('/fotos_tour/')[1]);
+            if (rutasArchivo.length > 0) {
+                await supabase.storage.from('fotos_tour').remove(rutasArchivo);
+            }
+
+            // 4. Borrar el nodo
+            const { error: errNodo } = await supabase.from('nodos').delete().eq('id', id);
+            if (errNodo) throw errNodo;
+
+            // 5. Recargar y, si borramos el nodo que estábamos viendo, saltar a otro válido
+            await get().cargarNodos();
+
+            if (eraElActivo) {
+                const nodosRestantes = Object.keys(get().nodos);
+                const siguienteNodo = nodosRestantes.includes('zibata') ? 'zibata' : nodosRestantes[0];
+
+                if (siguienteNodo) {
+                    const nuevaUrl = new URL(window.location.href);
+                    nuevaUrl.searchParams.set('nodo', siguienteNodo);
+                    window.history.pushState({}, '', nuevaUrl);
+                    set({ nodoActual: siguienteNodo });
+                }
+                set({ adminPanelActivo: null });
+            }
+
+            return { ok: true };
+        } catch (error: any) {
+            console.error("Error al borrar nodo:", error);
+            return { ok: false, error: error.message };
+        }
+    },
+
+    borrarNodoActual: async () => get().borrarNodo(get().nodoActual),
+
     // --- NAVEGACIÓN ---
     setNodoActual:        (id)  => set({ nodoActual: id }),
     setFadeActivo:        (val) => set({ fadeActivo: val }),
@@ -244,11 +302,11 @@ export const useTourStore = create<TourState>((set, get) => ({
 
     setLabelSeleccionadoId: (id) => set({ labelSeleccionadoId: id }),
 
-    crearNuevoLabel: async () => {
+    crearNuevoLabel: async (nodoId) => {
         const { nodoActual, cargarNodos } = get();
         // Posición inicial frente a la cámara
         const nuevoLabel = {
-            nodo_id: nodoActual,
+            nodo_id: nodoId || nodoActual,
             texto_es: 'Nueva Etiqueta',
             texto_en: 'New Label',
             x: 0, y: 0, z: -5,
@@ -260,19 +318,24 @@ export const useTourStore = create<TourState>((set, get) => ({
     },
 
     actualizarPropiedadesLabel: async (id, campo, valor) => {
-        // 1. Actualización Optimista (Local)
-        const { nodos, nodoActual } = get();
-        const nuevosNodos = { ...nodos };
-        const label = nuevosNodos[nodoActual].labels.find((l: any) => l.id === id);
-        
-        if (label) {
-            if (campo === 'offset_y') {
-                label.offset = { ...label.offset, y: valor };
-            } else {
-                label[campo] = valor;
+        // 1. Actualización Optimista (Local): buscamos el label en TODOS los nodos (puede no ser el activo)
+        const nodosActuales = { ...get().nodos };
+        for (const nId of Object.keys(nodosActuales)) {
+            const nodo = nodosActuales[nId];
+            const label = nodo.labels?.find((l: any) => l.id === id);
+            if (label) {
+                nodosActuales[nId] = {
+                    ...nodo,
+                    labels: nodo.labels.map((l: any) => {
+                        if (l.id !== id) return l;
+                        if (campo === 'offset_y') return { ...l, offset: { ...l.offset, y: valor } };
+                        return { ...l, [campo]: valor };
+                    }),
+                };
+                break;
             }
         }
-        set({ nodos: nuevosNodos });
+        set({ nodos: nodosActuales });
 
         // 2. Actualización en Nube
         const columnMap: any = { 'offset_y': 'offset_y', 'texto_es': 'texto_es', 'texto_en': 'texto_en' };
@@ -304,6 +367,4 @@ export const useTourStore = create<TourState>((set, get) => ({
         const { error } = await supabase.from('labels').update({ x, y, z }).eq('id', id);
         if (error) console.error("Error al guardar posición del label:", error);
     },
-    fovActual: 60, // Zoom inicial
-    setFovActual: (fov) => set({ fovActual: fov }),
 }));

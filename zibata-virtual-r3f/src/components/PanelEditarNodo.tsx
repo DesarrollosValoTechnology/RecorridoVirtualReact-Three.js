@@ -5,13 +5,15 @@ import { supabase } from '../supabase/client';
 import { convertirAWebP } from '../utils/imagenAWebp';
 
 export default function PanelEditarNodo() {
-    const { nodos, nodoActual, actualizarNodoActual, setAdminPanelActivo } = useTourStore();
+    const { nodos, nodoActual, actualizarNodoActual, setAdminPanelActivo, cargarNodos, borrarNodoActual } = useTourStore();
     const info = nodos[nodoActual];
 
     const [datos, setDatos] = useState({
         titulo: '', mapa_x: 0, mapa_y: 0, norte_offset: 0, lat: 0, lng: 0
     });
     const [subiendoMini, setSubiendoMini] = useState(false);
+    const [subiendo360, setSubiendo360] = useState(false);
+    const [borrando, setBorrando] = useState(false);
 
     useEffect(() => {
         if (info) {
@@ -43,11 +45,54 @@ export default function PanelEditarNodo() {
 
             const { data } = supabase.storage.from('fotos_tour').getPublicUrl(fileName);
             await actualizarNodoActual({ miniatura_url: data.publicUrl });
+            await cargarNodos(); // Refresco completo para que la miniatura se vea en el acto
             alert("✅ ¡Miniatura actualizada correctamente!");
         } catch (error) {
             alert("❌ Hubo un error al subir la miniatura.");
         } finally {
             setSubiendoMini(false);
+        }
+    };
+
+    const handleFoto360Upload = async (e: ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files?.[0]) return;
+        setSubiendo360(true);
+        try {
+            // Sin maxAncho/maxAlto: no recortamos resolución del panorama, solo recomprimimos
+            const archivoWebp = await convertirAWebP(e.target.files[0], { calidad: 0.82 });
+            const fileName = `${nodoActual}-360-${Math.random().toString(36).substring(7)}.webp`;
+
+            const { error } = await supabase.storage.from('fotos_tour').upload(fileName, archivoWebp);
+            if (error) throw error;
+
+            const { data } = supabase.storage.from('fotos_tour').getPublicUrl(fileName);
+            await actualizarNodoActual({ foto_url: data.publicUrl });
+            await cargarNodos(); // Refresco completo para que la esfera 3D muestre la nueva foto
+            alert("✅ ¡Foto 360 actualizada correctamente!");
+        } catch (error) {
+            alert("❌ Hubo un error al subir la foto 360.");
+        } finally {
+            setSubiendo360(false);
+        }
+    };
+
+    const handleBorrarNodo = async () => {
+        const confirmacion1 = window.confirm(
+            `¿Seguro que quieres eliminar el nodo "${nodoActual}"?\n\nEsto borrará también sus hotspots, etiquetas y las fotos asociadas. Esta acción no se puede deshacer.`
+        );
+        if (!confirmacion1) return;
+
+        const confirmacion2 = window.confirm('Última confirmación: ¿ELIMINAR este nodo de forma permanente?');
+        if (!confirmacion2) return;
+
+        setBorrando(true);
+        try {
+            const resultado = await borrarNodoActual();
+            if (!resultado.ok) {
+                alert(`❌ Error al borrar el nodo: ${resultado.error}`);
+            }
+        } finally {
+            setBorrando(false);
         }
     };
 
@@ -118,6 +163,12 @@ export default function PanelEditarNodo() {
             </div>
 
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '15px', paddingTop: '5px' }}>
+                <label style={{ ...labelStyle, color: '#4a90e2' }}>🌐 FOTO 360</label>
+                <input type="file" accept="image/*" onChange={handleFoto360Upload} disabled={subiendo360} style={{ ...inputPremiumStyle, padding: '6px', fontSize: '11px' }} />
+                {subiendo360 && <p style={{ color: '#4a90e2', fontSize: '11px', marginTop: '5px' }}>Convirtiendo y subiendo...</p>}
+            </div>
+
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '15px', paddingTop: '5px' }}>
                 <label style={{ ...labelStyle, color: '#e2a74a' }}>🖼️ MINIATURA (400x300px)</label>
                 <input type="file" accept="image/*" onChange={handleMiniUpload} disabled={subiendoMini} style={{ ...inputPremiumStyle, padding: '6px', fontSize: '11px' }} />
                 {subiendoMini && <p style={{ color: '#e2a74a', fontSize: '11px', marginTop: '5px' }}>Subiendo...</p>}
@@ -126,6 +177,24 @@ export default function PanelEditarNodo() {
             <button onClick={() => setAdminPanelActivo(null)} style={btnPremiumStyle} onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}>
                 Cerrar Panel
             </button>
+
+            <div style={{ borderTop: '1px solid rgba(255,60,60,0.2)', marginTop: '15px', paddingTop: '15px' }}>
+                <label style={{ ...labelStyle, color: '#ff4d4d', marginTop: 0 }}>⚠️ ZONA DE PELIGRO</label>
+                <button
+                    onClick={handleBorrarNodo}
+                    disabled={borrando}
+                    style={{
+                        ...btnPremiumStyle, marginTop: '8px',
+                        backgroundColor: borrando ? 'rgba(255,77,77,0.1)' : 'rgba(255,77,77,0.15)',
+                        border: '1px solid rgba(255,77,77,0.3)', color: '#ff4d4d',
+                        cursor: borrando ? 'not-allowed' : 'pointer'
+                    }}
+                    onMouseOver={(e) => !borrando && (e.currentTarget.style.backgroundColor = 'rgba(255,77,77,0.25)')}
+                    onMouseOut={(e) => !borrando && (e.currentTarget.style.backgroundColor = 'rgba(255,77,77,0.15)')}
+                >
+                    {borrando ? 'Eliminando...' : 'Eliminar este nodo'}
+                </button>
+            </div>
         </div>
     );
 }

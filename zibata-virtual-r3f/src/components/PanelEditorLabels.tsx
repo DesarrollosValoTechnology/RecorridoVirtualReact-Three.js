@@ -118,8 +118,8 @@ export default function PanelEditorLabels() {
                 </p>
             )}
 
-            <button 
-                onClick={crearNuevoLabel}
+            <button
+                onClick={() => crearNuevoLabel()}
                 style={btnPremiumStyle}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eeb863'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#e2a74a'}

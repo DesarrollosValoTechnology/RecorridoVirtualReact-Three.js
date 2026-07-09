@@ -9,11 +9,12 @@ import MapaBase from './MapaBase';
 // 🚨 1. LE DECIMOS A TYPESCRIPT QUÉ DATOS VAMOS A RECIBIR
 interface OverlayProps {
     esAppEscritorio?: boolean;
+    isAdmin?: boolean;
     onVolverAlMenu?: () => void;
 }
 
 // 🚨 2. RECIBIMOS LOS DATOS EN LA FUNCIÓN PRINCIPAL
-export default function OverlayUI({ esAppEscritorio, onVolverAlMenu }: OverlayProps) {
+export default function OverlayUI({ esAppEscritorio, isAdmin, onVolverAlMenu }: OverlayProps) {
     const store = useTourStore();
     // ✅ Leemos la info del nodo actual directamente del store (datos de Supabase)
     const nodos       = useTourStore((state) => state.nodos);
@@ -121,28 +122,34 @@ export default function OverlayUI({ esAppEscritorio, onVolverAlMenu }: OverlayPr
                         )}
                     </button>
 
-                    <button className="btn-icon" onClick={cambiarIdioma} title="Cambiar Idioma">
-                        {idiomaActual === 'es' ? 'EN' : 'ES'}
-                    </button>
+                    {!isAdmin && (
+                        <button className="btn-icon" onClick={cambiarIdioma} title="Cambiar Idioma">
+                            {idiomaActual === 'es' ? 'EN' : 'ES'}
+                        </button>
+                    )}
 
-                    <button className="btn-icon" onClick={() => store.setPanelActivo('compartir')} title={t["UI_COMPARTIR_TITULO"]}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-                    </button>
+                    {!isAdmin && (
+                        <button className="btn-icon" onClick={() => store.setPanelActivo('compartir')} title={t["UI_COMPARTIR_TITULO"]}>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                        </button>
+                    )}
 
-                    {!esIOS && (
+                    {!esIOS && !isAdmin && (
                         <button className="btn-icon" onClick={toggleFullscreen} title="Pantalla Completa">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
                         </button>
                     )}
                 </div>
 
-                <button className="btn-contacto" onClick={() => store.setPanelActivo('contacto')}>
-                    {t["UI_BTN_CONTACTO"]}
-                </button>
+                {!isAdmin && (
+                    <button className="btn-contacto" onClick={() => store.setPanelActivo('contacto')}>
+                        {t["UI_BTN_CONTACTO"]}
+                    </button>
+                )}
             </div>
 
-            {/* 3. REDES SOCIALES */}
-            <SocialBar />
+            {/* 3. REDES SOCIALES (ocultas en modo admin) */}
+            {!isAdmin && <SocialBar />}
 
             {/* 4. BARRA INFERIOR */}
             <div className="ui-bottom-bar-pill">

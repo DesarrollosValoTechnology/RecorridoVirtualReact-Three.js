@@ -14,11 +14,10 @@ import IntroAnimacion from './components/IntroAnimacion';
 import { actualizarMinimapaFrame, moverMapaANodo } from './utils/mapaRadar';
 import AdminNuevoNodo from './components/AdminMode';
 import AdminSidebar from './components/AdminSidebar';
+import AdminExplorador from './components/AdminExplorador';
 import PanelEditorHotspots from './components/PanelEditorHotspots';
 import PanelEditarNodo from './components/PanelEditarNodo';
 import PanelEditorLabels from './components/PanelEditorLabels';
-import IndicadorFOV from './components/IndicadorFOV';
-import ControlZoomFOV from './components/ControlZoomFOV';
 import TooltipPreview from './components/TooltipPreview';
 
 function SincronizadorRadar({ controlsRef }: { controlsRef: any }) {
@@ -204,10 +203,11 @@ function App() {
         {isAdmin && (
             <>
                 <AdminSidebar />
+                {adminPanelActivo === 'explorador' && <AdminExplorador />}
                 {adminPanelActivo === 'nuevoNodo' && <AdminNuevoNodo />}
                 {adminPanelActivo === 'editorLabels' && <PanelEditorLabels />}
                 {adminPanelActivo === 'editorHotspots' && <PanelEditorHotspots />}
-                {adminPanelActivo === 'editarNodo' && <PanelEditarNodo />} 
+                {adminPanelActivo === 'editarNodo' && <PanelEditarNodo />}
             </>
         )}
 
@@ -215,13 +215,13 @@ function App() {
         <PantallaCarga />
 
         {/* --- 2. UI DEL TOUR (Siempre Activa ahora) --- */}
-        <OverlayUI 
+        <OverlayUI
             esAppEscritorio={false} // Siempre será falso porque esta es la versión web
+            isAdmin={isAdmin}
             onVolverAlMenu={() => window.location.reload()} // Como no hay menú local, un recargo limpio por si acaso
         />
         <PanelesOverlay />
         <TooltipPreview />
-        <IndicadorFOV />
 
         {/* --- 3. MOTOR 3D --- */}
         <Canvas
@@ -232,7 +232,6 @@ function App() {
                 <IntroAnimacion />
                 <SincronizadorRadar controlsRef={controlsRef} />
                 <ControladorRotacion controlsRef={controlsRef} introTerminada={introTerminada} />
-                <ControlZoomFOV />
                 <Suspense fallback={null}>
                     <Escena360 />
                 </Suspense>
