@@ -76,7 +76,7 @@ export default function AdminExplorador() {
         nodos, nodoActual, setAdminPanelActivo, cargarNodo, cargarNodos,
         actualizarPropiedadesHotspot, borrarHotspot, crearNuevoHotspot,
         actualizarPropiedadesLabel, borrarLabel, crearNuevoLabel,
-        borrarNodo, generarBlurParaNodo,
+        borrarNodo, generarBlurParaNodo, generarMiniaturaParaNodo,
     } = useTourStore();
 
     const [busqueda, setBusqueda] = useState('');
@@ -84,6 +84,9 @@ export default function AdminExplorador() {
     const [generandoBlur, setGenerandoBlur] = useState(false);
     const [progresoBlur, setProgresoBlur] = useState('');
     const [generandoBlurId, setGenerandoBlurId] = useState<string | null>(null);
+    const [generandoMini, setGenerandoMini] = useState(false);
+    const [progresoMini, setProgresoMini] = useState('');
+    const [generandoMiniId, setGenerandoMiniId] = useState<string | null>(null);
 
     const opcionesDestino = useMemo(
         () => Object.entries(nodos).map(([id, info]: any) => ({ id, titulo: info.ui?.titulo || id })),
@@ -101,6 +104,12 @@ export default function AdminExplorador() {
 
     const nodosSinBlur = useMemo(
         () => Object.entries(nodos).filter(([, info]: any) => info.archivo && info.archivoBlur === info.archivo),
+        [nodos]
+    );
+
+    // Nodos cuya "miniatura" en realidad cae de vuelta a la foto 360 completa (miniatura_url vacío/null)
+    const nodosSinMiniatura = useMemo(
+        () => Object.entries(nodos).filter(([, info]: any) => info.archivo && info.ui?.miniatura === info.archivo),
         [nodos]
     );
 
@@ -134,6 +143,37 @@ export default function AdminExplorador() {
         } finally {
             setGenerandoBlur(false);
             setProgresoBlur('');
+        }
+    };
+
+    const handleGenerarMiniatura = async (id: string) => {
+        setGenerandoMiniId(id);
+        try {
+            const resultado = await generarMiniaturaParaNodo(id);
+            if (!resultado.ok) alert(`❌ Error al generar la miniatura: ${resultado.error}`);
+            else await cargarNodos();
+        } finally {
+            setGenerandoMiniId(null);
+        }
+    };
+
+    const handleGenerarMiniaturasFaltantes = async () => {
+        if (nodosSinMiniatura.length === 0) return;
+        const ok = window.confirm(`Se generará una miniatura real para ${nodosSinMiniatura.length} escena(s) que hoy usan la foto completa como miniatura. ¿Continuar?`);
+        if (!ok) return;
+
+        setGenerandoMini(true);
+        try {
+            for (let i = 0; i < nodosSinMiniatura.length; i++) {
+                const [id] = nodosSinMiniatura[i];
+                setProgresoMini(`${i + 1}/${nodosSinMiniatura.length}`);
+                const resultado = await generarMiniaturaParaNodo(id);
+                if (!resultado.ok) console.error(`No se pudo generar miniatura para ${id}:`, resultado.error);
+            }
+            await cargarNodos();
+        } finally {
+            setGenerandoMini(false);
+            setProgresoMini('');
         }
     };
 
@@ -189,6 +229,22 @@ export default function AdminExplorador() {
                             : `🌫️ Generar blur faltante (${nodosSinBlur.length} escena${nodosSinBlur.length === 1 ? '' : 's'})`}
                     </button>
                 )}
+
+                {nodosSinMiniatura.length > 0 && (
+                    <button
+                        onClick={handleGenerarMiniaturasFaltantes}
+                        disabled={generandoMini}
+                        style={{
+                            width: '100%', marginTop: '10px', padding: '9px', borderRadius: '10px',
+                            border: '1px solid rgba(226, 167, 74, 0.3)', backgroundColor: 'rgba(226, 167, 74, 0.12)',
+                            color: '#e2a74a', cursor: generandoMini ? 'not-allowed' : 'pointer', fontSize: '12px', fontWeight: 600
+                        }}
+                    >
+                        {generandoMini
+                            ? `Generando miniaturas (${progresoMini})...`
+                            : `🖼️ Generar miniatura faltante (${nodosSinMiniatura.length} escena${nodosSinMiniatura.length === 1 ? '' : 's'})`}
+                    </button>
+                )}
             </div>
 
             <div style={{ overflowY: 'auto', padding: '15px 24px 24px' }}>
@@ -202,6 +258,7 @@ export default function AdminExplorador() {
                     const hotspots = info.hotspots || [];
                     const labels = info.labels || [];
                     const sinBlur = !!info.archivo && info.archivoBlur === info.archivo;
+                    const sinMiniatura = !!info.archivo && info.ui?.miniatura === info.archivo;
 
                     return (
                         <div key={id} style={tarjetaStyle(esActivo)}>
@@ -225,6 +282,16 @@ export default function AdminExplorador() {
                                         style={{ ...miniBtnStyle, color: '#4a90e2' }}
                                     >
                                         {generandoBlurId === id ? '⏳' : '🌫️'}
+                                    </button>
+                                )}
+                                {sinMiniatura && (
+                                    <button
+                                        title="Sin miniatura: hoy usa la foto completa. Generar miniatura real"
+                                        onClick={() => handleGenerarMiniatura(id)}
+                                        disabled={generandoMiniId === id}
+                                        style={{ ...miniBtnStyle, color: '#e2a74a' }}
+                                    >
+                                        {generandoMiniId === id ? '⏳' : '🖼️'}
                                     </button>
                                 )}
                                 <button title="Ir a esta escena" onClick={() => cargarNodo(id)} style={miniBtnStyle}>➜</button>

@@ -1,12 +1,15 @@
 // src/store/useTourStore.ts
 import { create } from 'zustand';
 import { supabase } from '../supabase/client';
-import { generarVersionBlur } from '../utils/imagenAWebp';
+import { generarVersionBlur, convertirAWebP } from '../utils/imagenAWebp';
 
 const getInitialNode = () => {
     const params = new URLSearchParams(window.location.search);
     return params.get('nodo') || 'zibata';
 };
+
+// Categoría de las tomas aéreas de dron (debe coincidir con el valor guardado en Supabase)
+export const CATEGORIA_VISTA_AEREA = 'Exteriores Zibatá';
 
 interface TourState {
     nodoActual: string;
@@ -22,6 +25,7 @@ interface TourState {
     nodos: Record<string, any>;
     cargandoNodos: boolean;
     cargarNodos: () => Promise<void>;
+    ultimoNodoAereo: string;
     setNodoActual: (id: string) => void;
     setFadeActivo: (val: boolean) => void;
     setIsTransitioning: (val: boolean) => void;
@@ -43,6 +47,7 @@ interface TourState {
     borrarNodoActual: () => Promise<{ ok: boolean; error?: string }>;
     borrarNodo: (id: string) => Promise<{ ok: boolean; error?: string }>;
     generarBlurParaNodo: (id: string) => Promise<{ ok: boolean; error?: string }>;
+    generarMiniaturaParaNodo: (id: string) => Promise<{ ok: boolean; error?: string }>;
     actualizarPosicionHotspot: (id: string, x: number, y: number, z: number) => Promise<void>;
     crearNuevoHotspot: (nodoId?: string) => Promise<void>;
     hotspotSeleccionadoId: string | null;
@@ -74,6 +79,7 @@ export const useTourStore = create<TourState>((set, get) => ({
     tooltipHover: null,
     nodos: {},
     cargandoNodos: true,
+    ultimoNodoAereo: 'zibata',
 
     // --- CARGA DESDE SUPABASE ---
     cargarNodos: async () => {
@@ -129,7 +135,16 @@ export const useTourStore = create<TourState>((set, get) => ({
         let nodoFinal = get().nodoActual;
         if (!diccionarioNodos[nodoFinal]) nodoFinal = 'zibata';
 
-        set({ nodos: diccionarioNodos, nodoActual: nodoFinal, cargandoNodos: false });
+        // Si aterrizamos directo en una escena aérea (ej. al abrir la página), la recordamos
+        // como punto de regreso para el botón "Volver a Vista Aérea"
+        const esVistaAereaInicial = diccionarioNodos[nodoFinal]?.ui?.categoria === CATEGORIA_VISTA_AEREA;
+
+        set({
+            nodos: diccionarioNodos,
+            nodoActual: nodoFinal,
+            cargandoNodos: false,
+            ...(esVistaAereaInicial ? { ultimoNodoAereo: nodoFinal } : {}),
+        });
     },
 
     // --- EDITOR: HOTSPOTS ---
@@ -295,8 +310,40 @@ export const useTourStore = create<TourState>((set, get) => ({
         }
     },
 
+    // Genera y sube una miniatura real a partir de la foto 360 YA existente, para nodos que
+    // se quedaron sin miniatura (y por eso su "miniatura" cae de vuelta a la foto completa).
+    generarMiniaturaParaNodo: async (id) => {
+        const nodo = get().nodos[id];
+        if (!nodo?.archivo) return { ok: false, error: 'El nodo no tiene foto 360' };
+
+        try {
+            const respuesta = await fetch(nodo.archivo);
+            if (!respuesta.ok) throw new Error('No se pudo descargar la foto original');
+            const blob = await respuesta.blob();
+            const archivoOriginal = new File([blob], 'original', { type: blob.type || 'image/webp' });
+
+            const archivoMini = await convertirAWebP(archivoOriginal, { calidad: 0.75, maxAncho: 800, maxAlto: 600 });
+            const nombre = `${id}-thumb-${Math.random().toString(36).substring(7)}.webp`;
+
+            const { error: errUpload } = await supabase.storage.from('fotos_tour').upload(nombre, archivoMini);
+            if (errUpload) throw errUpload;
+            const { data } = supabase.storage.from('fotos_tour').getPublicUrl(nombre);
+
+            const { error: errUpdate } = await supabase.from('nodos').update({ miniatura_url: data.publicUrl }).eq('id', id);
+            if (errUpdate) throw errUpdate;
+
+            return { ok: true };
+        } catch (error: any) {
+            console.error(`Error generando miniatura para ${id}:`, error);
+            return { ok: false, error: error.message };
+        }
+    },
+
     // --- NAVEGACIÓN ---
-    setNodoActual:        (id)  => set({ nodoActual: id }),
+    setNodoActual: (id) => {
+        const esVistaAerea = get().nodos[id]?.ui?.categoria === CATEGORIA_VISTA_AEREA;
+        set({ nodoActual: id, ...(esVistaAerea ? { ultimoNodoAereo: id } : {}) });
+    },
     setFadeActivo:        (val) => set({ fadeActivo: val }),
     setIsTransitioning:   (val) => set({ isTransitioning: val }),
     setLogoVisible:       (val) => set({ logoVisible: val }),
@@ -326,7 +373,13 @@ export const useTourStore = create<TourState>((set, get) => ({
         nuevaUrl.searchParams.set('nodo', id);
         window.history.pushState({}, '', nuevaUrl);
 
-        set({ isTransitioning: true, fadeActivo: true, menuAbierto: false, panelActivo: null });
+        // Si el destino es una toma aérea, la recordamos como punto de regreso
+        const esVistaAerea = nodosDB[id]?.ui?.categoria === CATEGORIA_VISTA_AEREA;
+
+        set({
+            isTransitioning: true, fadeActivo: true, menuAbierto: false, panelActivo: null,
+            ...(esVistaAerea ? { ultimoNodoAereo: id } : {}),
+        });
         setTimeout(() => set({ nodoActual: id }), 500);
     },
     labelSeleccionadoId: null,

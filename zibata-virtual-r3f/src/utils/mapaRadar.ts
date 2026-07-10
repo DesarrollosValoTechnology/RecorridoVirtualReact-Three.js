@@ -6,6 +6,29 @@ let mapProjectionOverlay: any = null;
 // Coordenadas iniciales por defecto (Zibatá, Querétaro)
 let coordActuales = { lat: 20.676716, lng: -100.335424 };
 
+// Carga el SDK de Google Maps solo la primera vez que se necesita (al abrir "Ubicación"),
+// en vez de descargarlo en cada visita a la página aunque nadie abra ese panel.
+let promesaGoogleMaps: Promise<void> | null = null;
+
+function cargarGoogleMaps(): Promise<void> {
+    // Con loading=async, el evento "onload" del <script> dispara antes de que
+    // google.maps.Map exista de verdad — hay que esperar el callback real de Google.
+    if ((window as any).google?.maps?.Map) return Promise.resolve();
+    if (promesaGoogleMaps) return promesaGoogleMaps;
+
+    promesaGoogleMaps = new Promise((resolve, reject) => {
+        (window as any).__onGoogleMapsListo = () => resolve();
+
+        const script = document.createElement('script');
+        script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyBXz6wLrN4gp_yKdJ9dZu6R8x0670BYhcg&loading=async&callback=__onGoogleMapsListo';
+        script.async = true;
+        script.onerror = () => reject(new Error('No se pudo cargar Google Maps'));
+        document.head.appendChild(script);
+    });
+
+    return promesaGoogleMaps;
+}
+
 const ICONOS: Record<string, string> = {
     drone: `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="11.5" fill="black" stroke="white" stroke-width="0.5"/><g transform="translate(4.8, 4.8) scale(0.6)"><path d="M10 10 7 7"/><path d="m10 14-3 3"/><path d="m14 10 3-3"/><path d="m14 14 3 3"/><path d="M14.205 4.139a4 4 0 1 1 5.439 5.863"/><path d="M19.637 14a4 4 0 1 1-5.432 5.868"/><path d="M4.367 10a4 4 0 1 1 5.438-5.862"/><path d="M9.795 19.862a4 4 0 1 1-5.429-5.873"/><rect x="10" y="8" width="4" height="8" rx="1"/></g></svg>`,
     casa: `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="11.5" fill="black" stroke="white" stroke-width="0.5"/><g transform="translate(5, 5) scale(0.6)"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></g></svg>`,
@@ -21,7 +44,9 @@ export function abrirMapaInteractivo() {
         coordActuales = { lat: Number(info.lat), lng: Number(info.lng) };
     }
 
-    setTimeout(() => {
+    setTimeout(async () => {
+        await cargarGoogleMaps();
+
         if (!mapaSat) {
             const estiloOscuro = [
                 { elementType: "geometry", stylers: [{ color: "#212121" }] },

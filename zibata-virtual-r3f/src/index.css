@@ -169,6 +169,37 @@ body.en-iframe .ui-top-right {
     top: calc(25px + 68px);
 }
 
+#btn-volver-aerea {
+    position: absolute;
+    top: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 11;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--zibata-verde);
+    color: #ffffff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(92, 184, 42, 0.4);
+    transition: opacity 0.4s ease, transform 0.2s ease;
+}
+
+#btn-volver-aerea:hover {
+    transform: translateX(-50%) scale(1.05);
+}
+
+body.en-iframe #btn-volver-aerea {
+    top: calc(25px + 68px);
+}
+
 .herramientas-pill {
     display: flex;
     gap: 8px;
@@ -562,6 +593,17 @@ button,
 
     body.en-iframe .ui-top-right {
         top: calc(15px + 68px) !important;
+    }
+
+    /* En móvil el título y los íconos ocupan la franja superior; bajamos el botón para no chocar */
+    #btn-volver-aerea {
+        top: 70px !important;
+        font-size: 11px !important;
+        padding: 8px 14px !important;
+    }
+
+    body.en-iframe #btn-volver-aerea {
+        top: calc(70px + 68px) !important;
     }
 
     .herramientas-pill {

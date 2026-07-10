@@ -1,6 +1,6 @@
 // src/components/OverlayUI.tsx
 import { useEffect, useState } from 'react';
-import { useTourStore } from '../store/useTourStore';
+import { useTourStore, CATEGORIA_VISTA_AEREA } from '../store/useTourStore';
 import SocialBar from './SocialBar';
 import { xrStore } from '../store/xrStore';
 import { diccionario } from '../data/diccionario';
@@ -50,6 +50,8 @@ export default function OverlayUI({ esAppEscritorio, isAdmin, onVolverAlMenu }: 
     // Se esconde durante la caída cinematográfica inicial
     if (!infoNodo || (store.isTransitioning && !store.mostrarElementos3D)) return null;
 
+    const esVistaAerea = infoNodo.ui?.categoria === CATEGORIA_VISTA_AEREA;
+
     return (
         <div id="ui-overlay">
 
@@ -98,6 +100,24 @@ export default function OverlayUI({ esAppEscritorio, isAdmin, onVolverAlMenu }: 
                 <div id="info-titulo">{infoNodo.ui?.titulo    || t["UI_TITULO_DEFECTO"]}</div>
                 <div id="info-categoria">{infoNodo.ui?.categoria || t["UI_CATEGORIA_DEFECTO"]}</div>
             </div>
+
+            {/* 1.5 VOLVER A VISTA AÉREA (solo si NO estamos ya en una toma aérea) */}
+            {!esVistaAerea && (
+                <button
+                    id="btn-volver-aerea"
+                    onClick={() => store.cargarNodo(store.ultimoNodoAereo)}
+                    style={{ opacity: store.menuAbierto ? 0 : 1, pointerEvents: store.menuAbierto ? 'none' : 'auto' }}
+                    title="Volver a la vista aérea de dron"
+                >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M10 10 7 7"/><path d="m10 14-3 3"/><path d="m14 10 3-3"/><path d="m14 14 3 3"/>
+                        <path d="M14.205 4.139a4 4 0 1 1 5.439 5.863"/><path d="M19.637 14a4 4 0 1 1-5.432 5.868"/>
+                        <path d="M4.367 10a4 4 0 1 1 5.438-5.862"/><path d="M9.795 19.862a4 4 0 1 1-5.429-5.873"/>
+                        <rect x="10" y="8" width="4" height="8" rx="1"/>
+                    </svg>
+                    <span>Volver a Vista Aérea</span>
+                </button>
+            )}
 
             {/* 2. BOTONES ACCIÓN (Arriba Derecha) */}
             <div className="ui-top-right">

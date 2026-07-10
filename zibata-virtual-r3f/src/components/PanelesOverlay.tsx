@@ -43,7 +43,12 @@ export default function PanelesOverlay() {
                     <button className="btn-cerrar-panel" onClick={cerrarMenu}>✖</button>
                     <h2 className="form-title">{t["UI_MENU_ZONAS"]}</h2>
 
-<div className="menu-contenido" style={{ overflowY: 'auto', flexGrow: 1, paddingRight: '10px' }}>
+                    {/* Solo montamos la rejilla (con sus <img> de miniaturas) cuando el menú
+                        está realmente abierto. Antes vivía siempre en el DOM (solo oculto con
+                        opacity/visibility), así que el navegador descargaba las 9 miniaturas
+                        de golpe en cada carga de página, aunque nadie abriera el menú. */}
+                    {store.menuAbierto && (
+                    <div className="menu-contenido" style={{ overflowY: 'auto', flexGrow: 1, paddingRight: '10px' }}>
                         {Object.entries(categorias)
                             // 🚨 AQUÍ ESTÁ LA MAGIA DEL ORDENAMIENTO
                             .sort(([catA], [catB]) => {
@@ -86,6 +91,7 @@ export default function PanelesOverlay() {
                             );
                         })}
                     </div>
+                    )}
                 </div>
             </div>
 
