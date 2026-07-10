@@ -326,6 +326,23 @@ body.en-iframe .ui-top-right {
     pointer-events: none;
 }
 
+/* Embebido en iframe (ej. kiosco de ventas): la barra flotante del anfitrión ocupa el borde
+   superior, así que anclamos los modales un poco más abajo (en vez de centrarlos a lo alto
+   completo) para que la "X" de cerrar no quede debajo de esa barra. */
+body.en-iframe .panel-generico {
+    align-items: flex-start;
+    padding-top: 100px;
+    box-sizing: border-box;
+}
+
+body.en-iframe .panel-contenido {
+    max-height: calc(90vh - 100px);
+}
+
+body.en-iframe .panel-contenido.map-container {
+    height: calc(85vh - 100px);
+}
+
 .panel-contenido {
     background: var(--panel-bg);
     color: var(--zibata-blanco);
@@ -611,6 +628,14 @@ button,
         width: 98vw !important;
         height: 85vh !important;
         padding: 10px !important;
+    }
+
+    body.en-iframe .panel-contenido {
+        max-height: calc(85vh - 100px) !important;
+    }
+
+    body.en-iframe .panel-contenido.map-container {
+        height: calc(85vh - 100px) !important;
     }
 
     .form-title { font-size: 18px !important; }
