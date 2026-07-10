@@ -50,10 +50,12 @@ export default function TooltipPreview() {
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
             backdropFilter: 'blur(4px)'
         }}>
-            <img 
-                src={tooltipHover.miniatura} 
-                alt={tooltipHover.titulo} 
-                style={{ width: '100%', borderRadius: '6px', objectFit: 'cover', aspectRatio: '16/9' }} 
+            <img
+                src={tooltipHover.miniatura}
+                alt={tooltipHover.titulo}
+                width={260}
+                height={146}
+                style={{ width: '100%', height: 'auto', borderRadius: '6px', objectFit: 'cover', aspectRatio: '16/9' }}
             />
             <span style={{ fontWeight: 'bold', textAlign: 'center', fontSize: '14px' }}>
                 {tooltipHover.titulo}

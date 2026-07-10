@@ -26,15 +26,18 @@ export default function PantallaCarga() {
                 backdropFilter: logoTranslucido ? 'blur(4px)' : 'none',
             }}
         >
-            <img 
-                src="/Assets/logo_supraterra.png" 
-                alt="Logo Supraterra" 
-                style={{ 
-                    width: '250px', 
+            <img
+                src="/Assets/logo_supraterra.png"
+                alt="Logo Supraterra"
+                width={250}
+                height={81}
+                style={{
+                    width: '250px',
+                    height: 'auto',
                     marginBottom: '40px', // Le di un poco más de aire
                     opacity: logoTranslucido ? 0.8 : 1,
                     transition: 'opacity 2s ease'
-                }} 
+                }}
             />
             
             {/* 🚨 NUEVO: Contenedor del spinner y el texto */}

@@ -5,6 +5,9 @@
     <link rel="icon" type="image/png" href="/Assets/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Tour Virtual ZIBATA</title>
+    <!-- Es el primer elemento visible (logo de la pantalla de carga) y el candidato a LCP:
+         lo pedimos desde el HTML, sin esperar a que cargue React. -->
+    <link rel="preload" as="image" href="/Assets/logo_supraterra.png" fetchpriority="high" />
   </head>
   <body>
     <div id="root"></div>

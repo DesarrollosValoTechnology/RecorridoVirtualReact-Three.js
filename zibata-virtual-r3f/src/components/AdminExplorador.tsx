@@ -266,6 +266,8 @@ export default function AdminExplorador() {
                                 <img
                                     src={info.ui?.miniatura}
                                     alt=""
+                                    width={44}
+                                    height={32}
                                     style={{ width: '44px', height: '32px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0, backgroundColor: '#111' }}
                                 />
                                 <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => toggleExpandido(id)}>
