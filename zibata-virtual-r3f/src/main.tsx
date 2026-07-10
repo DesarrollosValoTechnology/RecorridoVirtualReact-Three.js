@@ -15,6 +15,14 @@ document.addEventListener('dragstart', (e) => {
     }
 });
 
+// Cuando esta página se embebe en un iframe (ej. el kiosco de ventas), la app anfitriona
+// pone su propia barra flotante encima del borde superior. Marcamos el <body> para que el
+// CSS recorra hacia abajo el título/controles que viven ahí y no queden tapados.
+const enIframe = typeof window !== 'undefined' && window.self !== window.top;
+if (enIframe) {
+    document.body.classList.add('en-iframe');
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
