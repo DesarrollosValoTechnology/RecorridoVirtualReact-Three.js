@@ -20,6 +20,10 @@ export default function IntroAnimacion() {
 
     const velocidadCaida = useRef(0.00001);
     const pseudoTarget = useRef(new THREE.Vector3(0, 0, 0.01));
+    // Recuerda si isTransitioning venía en true, para distinguir "se acaba de terminar
+    // una caída real" de "isTransitioning ya era false desde que montó el componente"
+    // (el store arranca en false antes de que App.tsx dispare la caída).
+    const isTransitioningPrevRef = useRef(isTransitioning);
 
     useEffect(() => {
         const cam = camera as THREE.PerspectiveCamera;
@@ -80,6 +84,12 @@ export default function IntroAnimacion() {
     useEffect(() => {
         const ctrl = controls as unknown as IOrbitControls;
 
+        // Solo es una "caída real recién terminada" si isTransitioning venía en true.
+        // Si ya era false desde el montaje (antes de que App.tsx dispare la caída),
+        // esto NO debe tocar la cámara, o adelantaríamos la animación antes de que empiece.
+        const veniaDeUnaTransicionReal = isTransitioningPrevRef.current;
+        isTransitioningPrevRef.current = isTransitioning;
+
         // Finalización de la animación: fijar el target final
         if (!isTransitioning && ctrl && ctrl.target) {
             const cam = camera as THREE.PerspectiveCamera;
@@ -92,7 +102,7 @@ export default function IntroAnimacion() {
             // incorrectos). Forzamos aquí el estado final exacto (posición, FOV y hacia dónde
             // mira) en vez de confiar en que el lerp ya haya llegado — si ya había llegado,
             // esto no cambia nada visualmente.
-            if (!isAdmin) {
+            if (!isAdmin && veniaDeUnaTransicionReal) {
                 cam.position.set(0, 0, 0);
                 cam.fov = 90;
                 cam.updateProjectionMatrix();
