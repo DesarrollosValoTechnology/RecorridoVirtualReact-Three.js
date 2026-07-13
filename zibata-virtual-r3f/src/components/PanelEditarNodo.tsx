@@ -59,9 +59,10 @@ export default function PanelEditarNodo() {
         setSubiendo360(true);
         try {
             const original = e.target.files[0];
-            // Sin maxAncho/maxAlto: no recortamos resolución del panorama, solo recomprimimos
+            // Tope 8192x4096: evita que el navegador reescale la textura en tiempo real con
+            // mala calidad al subirla a la GPU (ver imagenAWebp.ts para más contexto).
             const [archivoWebp, archivoBlur] = await Promise.all([
-                convertirAWebP(original, { calidad: 0.82 }),
+                convertirAWebP(original, { calidad: 0.82, maxAncho: 8192, maxAlto: 4096 }),
                 generarVersionBlur(original),
             ]);
 

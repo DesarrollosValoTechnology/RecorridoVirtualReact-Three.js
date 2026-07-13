@@ -18,6 +18,8 @@ import AdminExplorador from './components/AdminExplorador';
 import PanelEditorHotspots from './components/PanelEditorHotspots';
 import PanelEditarNodo from './components/PanelEditarNodo';
 import PanelEditorLabels from './components/PanelEditorLabels';
+import IndicadorFOV from './components/IndicadorFOV';
+import ControlZoomFOV from './components/ControlZoomFOV';
 import TooltipPreview from './components/TooltipPreview';
 
 function SincronizadorRadar({ controlsRef }: { controlsRef: any }) {
@@ -222,6 +224,7 @@ function App() {
         />
         <PanelesOverlay />
         <TooltipPreview />
+        <IndicadorFOV />
 
         {/* --- 3. MOTOR 3D --- */}
         <Canvas
@@ -232,6 +235,7 @@ function App() {
                 <IntroAnimacion />
                 <SincronizadorRadar controlsRef={controlsRef} />
                 <ControladorRotacion controlsRef={controlsRef} introTerminada={introTerminada} />
+                <ControlZoomFOV />
                 <Suspense fallback={null}>
                     <Escena360 />
                 </Suspense>

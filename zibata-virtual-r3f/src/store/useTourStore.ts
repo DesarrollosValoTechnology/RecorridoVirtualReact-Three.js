@@ -48,6 +48,7 @@ interface TourState {
     borrarNodo: (id: string) => Promise<{ ok: boolean; error?: string }>;
     generarBlurParaNodo: (id: string) => Promise<{ ok: boolean; error?: string }>;
     generarMiniaturaParaNodo: (id: string) => Promise<{ ok: boolean; error?: string }>;
+    reoptimizarFoto360ParaNodo: (id: string) => Promise<{ ok: boolean; error?: string; sinCambios?: boolean }>;
     actualizarPosicionHotspot: (id: string, x: number, y: number, z: number) => Promise<void>;
     crearNuevoHotspot: (nodoId?: string) => Promise<void>;
     hotspotSeleccionadoId: string | null;
@@ -59,6 +60,8 @@ interface TourState {
     crearNuevoLabel: (nodoId?: string) => Promise<void>;
     actualizarPropiedadesLabel: (id: string, campo: string, valor: any) => Promise<void>;
     borrarLabel: (id: string) => Promise<void>;
+    fovActual: number;
+    setFovActual: (fov: number) => void;
 }
 
 export const useTourStore = create<TourState>((set, get) => ({
@@ -339,6 +342,42 @@ export const useTourStore = create<TourState>((set, get) => ({
         }
     },
 
+    // Re-descarga la foto 360 YA subida y, si excede el tamaño máximo de textura seguro para
+    // GPU (8192x4096), la reescala con buena calidad y la vuelve a subir. Sin esto, el navegador
+    // hace ese mismo reescalado en tiempo real dentro del visor 3D, pero con un algoritmo básico
+    // (Three.js: "Texture has been resized..."), lo que se ve granulado/borroso en el teléfono.
+    reoptimizarFoto360ParaNodo: async (id) => {
+        const nodo = get().nodos[id];
+        if (!nodo?.archivo) return { ok: false, error: 'El nodo no tiene foto 360' };
+
+        try {
+            const respuesta = await fetch(nodo.archivo);
+            if (!respuesta.ok) throw new Error('No se pudo descargar la foto original');
+            const blob = await respuesta.blob();
+            const archivoOriginal = new File([blob], 'original', { type: blob.type || 'image/webp' });
+
+            const bitmap = await createImageBitmap(archivoOriginal);
+            const yaEstaBien = bitmap.width <= 8192 && bitmap.height <= 4096;
+            bitmap.close();
+            if (yaEstaBien) return { ok: true, sinCambios: true };
+
+            const archivoOptimizado = await convertirAWebP(archivoOriginal, { calidad: 0.85, maxAncho: 8192, maxAlto: 4096 });
+            const nombre = `${id}-360-${Math.random().toString(36).substring(7)}.webp`;
+
+            const { error: errUpload } = await supabase.storage.from('fotos_tour').upload(nombre, archivoOptimizado);
+            if (errUpload) throw errUpload;
+            const { data } = supabase.storage.from('fotos_tour').getPublicUrl(nombre);
+
+            const { error: errUpdate } = await supabase.from('nodos').update({ foto_url: data.publicUrl }).eq('id', id);
+            if (errUpdate) throw errUpdate;
+
+            return { ok: true };
+        } catch (error: any) {
+            console.error(`Error reoptimizando foto 360 para ${id}:`, error);
+            return { ok: false, error: error.message };
+        }
+    },
+
     // --- NAVEGACIÓN ---
     setNodoActual: (id) => {
         const esVistaAerea = get().nodos[id]?.ui?.categoria === CATEGORIA_VISTA_AEREA;
@@ -451,4 +490,6 @@ export const useTourStore = create<TourState>((set, get) => ({
         const { error } = await supabase.from('labels').update({ x, y, z }).eq('id', id);
         if (error) console.error("Error al guardar posición del label:", error);
     },
+    fovActual: 90, // FOV de reposo del tour (ver IntroAnimacion.tsx)
+    setFovActual: (fov) => set({ fovActual: fov }),
 }));

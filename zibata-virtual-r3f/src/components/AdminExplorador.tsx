@@ -76,7 +76,7 @@ export default function AdminExplorador() {
         nodos, nodoActual, setAdminPanelActivo, cargarNodo, cargarNodos,
         actualizarPropiedadesHotspot, borrarHotspot, crearNuevoHotspot,
         actualizarPropiedadesLabel, borrarLabel, crearNuevoLabel,
-        borrarNodo, generarBlurParaNodo, generarMiniaturaParaNodo,
+        borrarNodo, generarBlurParaNodo, generarMiniaturaParaNodo, reoptimizarFoto360ParaNodo,
     } = useTourStore();
 
     const [busqueda, setBusqueda] = useState('');
@@ -87,6 +87,7 @@ export default function AdminExplorador() {
     const [generandoMini, setGenerandoMini] = useState(false);
     const [progresoMini, setProgresoMini] = useState('');
     const [generandoMiniId, setGenerandoMiniId] = useState<string | null>(null);
+    const [reoptimizandoId, setReoptimizandoId] = useState<string | null>(null);
 
     const opcionesDestino = useMemo(
         () => Object.entries(nodos).map(([id, info]: any) => ({ id, titulo: info.ui?.titulo || id })),
@@ -154,6 +155,18 @@ export default function AdminExplorador() {
             else await cargarNodos();
         } finally {
             setGenerandoMiniId(null);
+        }
+    };
+
+    const handleReoptimizarFoto360 = async (id: string) => {
+        setReoptimizandoId(id);
+        try {
+            const resultado = await reoptimizarFoto360ParaNodo(id);
+            if (!resultado.ok) alert(`❌ Error al reoptimizar la foto 360: ${resultado.error}`);
+            else if (resultado.sinCambios) alert('✅ Esta foto ya está dentro del tamaño seguro (8192x4096) — no se cambió nada.');
+            else await cargarNodos();
+        } finally {
+            setReoptimizandoId(null);
         }
     };
 
@@ -276,6 +289,14 @@ export default function AdminExplorador() {
                                     </div>
                                     <div style={{ fontSize: '10px', color: '#888' }}>{hotspots.length} hotspots · {labels.length} etiquetas</div>
                                 </div>
+                                <button
+                                    title="Reoptimizar foto 360 (si excede 8192x4096, el navegador la reescala solo con mala calidad)"
+                                    onClick={() => handleReoptimizarFoto360(id)}
+                                    disabled={reoptimizandoId === id}
+                                    style={{ ...miniBtnStyle, color: '#7e968a' }}
+                                >
+                                    {reoptimizandoId === id ? '⏳' : '📐'}
+                                </button>
                                 {sinBlur && (
                                     <button
                                         title="Sin versión blur: generarla a partir de la foto 360 actual"

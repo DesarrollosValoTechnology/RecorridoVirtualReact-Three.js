@@ -47,9 +47,12 @@ export default function AdminMode() {
         setMensaje('Convirtiendo foto 360 a WebP...');
         try {
             const original = e.target.files[0];
-            // Sin maxAncho/maxAlto: no recortamos resolución del panorama, solo recomprimimos
+            // Tope 8192x4096: si el archivo original es más grande (ej. 10496x5248 de un dron
+            // en 8K+), el navegador lo reescalaría en tiempo real con mala calidad al momento
+            // de subirlo a la GPU (Three.js: "Texture has been resized..."). Lo hacemos nosotros
+            // una sola vez, con buena calidad, para que eso nunca pase.
             const [archivoWebp, archivoBlur] = await Promise.all([
-                convertirAWebP(original, { calidad: 0.82 }),
+                convertirAWebP(original, { calidad: 0.82, maxAncho: 8192, maxAlto: 4096 }),
                 generarVersionBlur(original),
             ]);
             setArchivo360(archivoWebp);
