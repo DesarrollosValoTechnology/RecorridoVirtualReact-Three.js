@@ -57,8 +57,12 @@ export default function IntroAnimacion() {
         const cam = camera as THREE.PerspectiveCamera;
         const ajusteFPS = delta * 60;
 
-        if (velocidadCaida.current < 0.004) {
-            velocidadCaida.current += 0.00003 * ajusteFPS; 
+        // 🚨 Velocidad ajustada: con los valores originales (tope 0.004) el lerp tardaba
+        // matemáticamente ~19s en converger, pero App.tsx solo le da 7s+2s de ventana antes
+        // de forzar el final — por eso se sentía como un corte/salto justo al terminar.
+        // Con este tope más alto converge de sobra (~6s) dentro de esa misma ventana.
+        if (velocidadCaida.current < 0.024) {
+            velocidadCaida.current += 0.00018 * ajusteFPS;
         }
 
         const lerpFactor = velocidadCaida.current * ajusteFPS;
