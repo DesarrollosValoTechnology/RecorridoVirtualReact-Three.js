@@ -79,9 +79,28 @@ export default function IntroAnimacion() {
 
     useEffect(() => {
         const ctrl = controls as unknown as IOrbitControls;
-        
+
         // Finalización de la animación: fijar el target final
         if (!isTransitioning && ctrl && ctrl.target) {
+            const cam = camera as THREE.PerspectiveCamera;
+
+            // 🚨 FIX: si la pestaña estuvo oculta/minimizada durante la caída, el navegador
+            // pausa por completo el useFrame de arriba (depende de requestAnimationFrame),
+            // pero los sleep()/setTimeout de App.tsx siguen su curso en tiempo real. Eso puede
+            // marcar la transición como terminada sin que el lerp haya tenido frames para
+            // converger, dejando la cámara congelada a medio camino (posición/FOV/orientación
+            // incorrectos). Forzamos aquí el estado final exacto (posición, FOV y hacia dónde
+            // mira) en vez de confiar en que el lerp ya haya llegado — si ya había llegado,
+            // esto no cambia nada visualmente.
+            if (!isAdmin) {
+                cam.position.set(0, 0, 0);
+                cam.fov = 90;
+                cam.updateProjectionMatrix();
+                pseudoTarget.current.set(0, 0, 50);
+                ctrl.target.copy(pseudoTarget.current);
+                ctrl.update();
+            }
+
             const direction = new THREE.Vector3();
             camera.getWorldDirection(direction);
             const tinyDistance = 0.01;
@@ -90,7 +109,7 @@ export default function IntroAnimacion() {
             ctrl.target.copy(newTarget);
             ctrl.update();
         }
-    }, [isTransitioning, controls, camera]);
+    }, [isTransitioning, controls, camera, isAdmin]);
 
     return null;
 }
