@@ -8,17 +8,17 @@ import { useTourStore } from '../store/useTourStore';
 // Radio un poco menor al de la esfera panorámica (500) para que el logo quede "al frente"
 const RADIO = 400;
 // Qué tan arriba, en el cielo, vive el logo (0 = horizonte, 90° = justo en el cenit)
-const ELEVACION = THREE.MathUtils.degToRad(45);
+const ELEVACION = THREE.MathUtils.degToRad(30);
 // Qué tan rápido "alcanza" el giro de la cámara cada frame (0-1: más alto = más rápido/menos retraso)
-const VELOCIDAD_SEGUIMIENTO = 0.04;
+const VELOCIDAD_SEGUIMIENTO = 0.005;
 
-const ANCHO = 130;
-const ALTO = ANCHO * (1117 / 900); // aspect ratio real de zibata.png
+const ANCHO = 420;
+const ALTO = ANCHO * (1381 / 7468); // aspect ratio real de "Logo Z_Lo imposible posible.png"
 
 export default function LogoCielo() {
     const { camera } = useThree();
     const mostrarElementos3D = useTourStore((state) => state.mostrarElementos3D);
-    const texture = useTexture('/Assets/zibata.png');
+    const texture = useTexture('/Assets/logo-cielo.webp');
     texture.colorSpace = THREE.SRGBColorSpace;
 
     const meshRef = useRef<THREE.Mesh>(null);

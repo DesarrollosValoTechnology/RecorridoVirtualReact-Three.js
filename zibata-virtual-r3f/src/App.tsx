@@ -2,9 +2,8 @@
 import { useEffect, Suspense, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Environment, CameraControls } from '@react-three/drei';
-import { XR } from '@react-three/xr'; 
-import { xrStore } from './store/xrStore'; 
 import { useTourStore } from './store/useTourStore';
+import { registrarCanvasCaptura } from './utils/capturaPantalla';
 import Escena360 from './components/Escena360';
 import OverlayUI from './components/OverlayUI';
 import PanelesOverlay from './components/PanelesOverlay';
@@ -22,6 +21,7 @@ import IndicadorFOV from './components/IndicadorFOV';
 import ControlZoomFOV from './components/ControlZoomFOV';
 import LogoCielo from './components/LogoCielo';
 import TooltipPreview from './components/TooltipPreview';
+import CapturaFoto from './components/CapturaFoto';
 
 function SincronizadorRadar({ controlsRef }: { controlsRef: any }) {
     const { camera } = useThree();
@@ -37,19 +37,20 @@ function SincronizadorRadar({ controlsRef }: { controlsRef: any }) {
 }
 
 function ControladorRotacion({ controlsRef, introTerminada }: { controlsRef: any, introTerminada: boolean }) {
-    const { userQuiereRotacion, isTransitioning, menuAbierto, panelActivo } = useTourStore();
+    const { userQuiereRotacion, isTransitioning, menuAbierto, panelActivo, capturaAbierta } = useTourStore();
 
     useFrame(() => {
         if (controlsRef.current) {
             const isHovering = document.body.classList.contains('sobre-hotspot');
             const isInteractuando = document.body.classList.contains('pausa-inactividad');
 
-            const debeRotar = introTerminada && 
-                              userQuiereRotacion && 
-                              !isTransitioning && 
-                              !menuAbierto && 
-                              panelActivo === null && 
-                              !isInteractuando && 
+            const debeRotar = introTerminada &&
+                              userQuiereRotacion &&
+                              !isTransitioning &&
+                              !menuAbierto &&
+                              panelActivo === null &&
+                              !capturaAbierta &&
+                              !isInteractuando &&
                               !isHovering;
 
             controlsRef.current.autoRotate = debeRotar;
@@ -226,30 +227,39 @@ function App() {
         <PanelesOverlay />
         <TooltipPreview />
         <IndicadorFOV />
+        <CapturaFoto />
 
         {/* --- 3. MOTOR 3D --- */}
         <Canvas
             camera={{ position: [-0.001, 250, 0.001], fov: 140 }}
             style={{ position: 'absolute', top: 0, left: 0, zIndex: 1 }}
+            // 🚨 flat: por defecto r3f aplica tone mapping cinematográfico (ACESFilmic),
+            // pensado para escenas 3D con iluminación. Eso "aplana"/desatura los colores
+            // reales de las fotos 360 (texturas planas sin luces). Con flat, se muestran
+            // los colores del archivo tal cual, sin ese filtro.
+            flat
+            // preserveDrawingBuffer: necesario para poder leer el <canvas> con toDataURL()
+            // (el botón de captura de foto) — sin esto, el buffer se limpia después de
+            // pintar cada frame y la imagen capturada saldría en negro.
+            gl={{ preserveDrawingBuffer: true }}
+            onCreated={({ gl }) => registrarCanvasCaptura(gl.domElement)}
         >
-            <XR store={xrStore}>
-                <IntroAnimacion />
-                <SincronizadorRadar controlsRef={controlsRef} />
-                <ControladorRotacion controlsRef={controlsRef} introTerminada={introTerminada} />
-                <ControlZoomFOV />
-                <Suspense fallback={null}>
-                    <Escena360 />
-                    <LogoCielo />
-                </Suspense>
-                <OrbitControls
-                    ref={controlsRef}
-                    makeDefault
-                    enableZoom={false} 
-                    enablePan={false}
-                    rotateSpeed={-0.6}
-                    enabled={!isTransitioning && !menuAbierto && panelActivo === null}
-                />
-            </XR>
+            <IntroAnimacion />
+            <SincronizadorRadar controlsRef={controlsRef} />
+            <ControladorRotacion controlsRef={controlsRef} introTerminada={introTerminada} />
+            <ControlZoomFOV />
+            <Suspense fallback={null}>
+                <Escena360 />
+                <LogoCielo />
+            </Suspense>
+            <OrbitControls
+                ref={controlsRef}
+                makeDefault
+                enableZoom={false}
+                enablePan={false}
+                rotateSpeed={-0.6}
+                enabled={!isTransitioning && !menuAbierto && panelActivo === null}
+            />
         </Canvas>
         <FadeOverlay />
     </div>

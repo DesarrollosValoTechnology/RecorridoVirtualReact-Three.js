@@ -62,6 +62,8 @@ interface TourState {
     borrarLabel: (id: string) => Promise<void>;
     fovActual: number;
     setFovActual: (fov: number) => void;
+    capturaAbierta: boolean;
+    setCapturaAbierta: (val: boolean) => void;
 }
 
 export const useTourStore = create<TourState>((set, get) => ({
@@ -492,4 +494,6 @@ export const useTourStore = create<TourState>((set, get) => ({
     },
     fovActual: 90, // FOV de reposo del tour (ver IntroAnimacion.tsx)
     setFovActual: (fov) => set({ fovActual: fov }),
+    capturaAbierta: false,
+    setCapturaAbierta: (val) => set({ capturaAbierta: val }),
 }));

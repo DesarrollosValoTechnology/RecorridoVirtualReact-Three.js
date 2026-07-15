@@ -1,8 +1,6 @@
 // src/components/OverlayUI.tsx
-import { useEffect, useState } from 'react';
 import { useTourStore, CATEGORIA_VISTA_AEREA } from '../store/useTourStore';
 import SocialBar from './SocialBar';
-import { xrStore } from '../store/xrStore';
 import { diccionario } from '../data/diccionario';
 import MapaBase from './MapaBase';
 
@@ -24,14 +22,7 @@ export default function OverlayUI({ esAppEscritorio, isAdmin, onVolverAlMenu }: 
 
     const t = diccionario[idiomaActual];
 
-    const [vrSupported, setVrSupported] = useState(false);
     const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
-    useEffect(() => {
-        if (navigator.xr) {
-            navigator.xr.isSessionSupported('immersive-vr').then(setVrSupported);
-        }
-    }, []);
 
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {
@@ -41,14 +32,8 @@ export default function OverlayUI({ esAppEscritorio, isAdmin, onVolverAlMenu }: 
         }
     };
 
-    const entrarVR = async () => {
-        if (!vrSupported) return;
-        try { await xrStore.enterVR(); }
-        catch (error) { console.error("Error al entrar en VR:", error); }
-    };
-
-    // Se esconde durante la caída cinematográfica inicial
-    if (!infoNodo || (store.isTransitioning && !store.mostrarElementos3D)) return null;
+    // Se esconde durante la caída cinematográfica inicial y mientras se está encuadrando una captura
+    if (!infoNodo || (store.isTransitioning && !store.mostrarElementos3D) || store.capturaAbierta) return null;
 
     const esVistaAerea = infoNodo.ui?.categoria === CATEGORIA_VISTA_AEREA;
 
@@ -124,14 +109,10 @@ export default function OverlayUI({ esAppEscritorio, isAdmin, onVolverAlMenu }: 
                 <div className="herramientas-pill">
                     <button
                         className="btn-icon"
-                        title="Realidad Virtual"
-                        onClick={entrarVR}
-                        style={{ opacity: vrSupported ? 1 : 0.3, cursor: vrSupported ? 'pointer' : 'default', transition: 'opacity 0.3s ease' }}
+                        title="Tomar captura"
+                        onClick={() => store.setCapturaAbierta(true)}
                     >
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <rect x="2" y="7" width="20" height="11" rx="2"></rect>
-                            <path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"></path>
-                        </svg>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg>
                     </button>
 
                     <button className="btn-icon" onClick={store.toggleRotacion} title="Girar Cámara">

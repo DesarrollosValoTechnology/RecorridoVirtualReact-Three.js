@@ -32,6 +32,11 @@ export default function EsferaProgresiva({ rutaBajaRes, rutaAltaRes }: Props) {
                 t.colorSpace = THREE.SRGBColorSpace;
                 t.wrapS = THREE.RepeatWrapping;
                 t.repeat.x = -1;
+                // Filtrado anisotrópico: reduce el aliasing/"grano" cuando la textura se ve
+                // en ángulos muy cerrados respecto a la cámara (común cerca de los polos
+                // de la esfera). 16 es un valor alto y seguro — Three.js lo recorta solo
+                // al máximo real que soporte la GPU del dispositivo.
+                t.anisotropy = 16;
                 setTexturaAlta(t); // Aquí ocurre el "cambiazo" a HD
             }
         });
@@ -41,10 +46,14 @@ export default function EsferaProgresiva({ rutaBajaRes, rutaAltaRes }: Props) {
 
     return (
         <mesh scale={[1, 1, 1]}>
-            <sphereGeometry args={[500, 60, 40]} />
-            <meshBasicMaterial 
-                map={texturaAlta || texturaBaja} 
-                side={THREE.DoubleSide} 
+            {/* 🚨 128x96 segmentos (antes 60x40): con pocos segmentos, cerca de los polos
+                (nadir/cenit) la malla tiene triángulos grandes y toscos que exageran
+                cualquier imperfección mínima del píxel en un patrón de "estrella" muy
+                visible. Con más segmentos, esa misma imperfección se reparte suavemente. */}
+            <sphereGeometry args={[500, 128, 96]} />
+            <meshBasicMaterial
+                map={texturaAlta || texturaBaja}
+                side={THREE.DoubleSide}
             />
         </mesh>
     );

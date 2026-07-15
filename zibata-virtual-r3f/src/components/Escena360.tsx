@@ -35,16 +35,20 @@ function SincronizadorMinimapa({ offsetGrados = 0 }: { offsetGrados: number }) {
 }
 
 export default function Escena360() {
-    const { 
-        nodoActual, 
-        nodos, 
-        setFadeActivo, 
-        setIsTransitioning, 
+    const {
+        nodoActual,
+        nodos,
+        setFadeActivo,
+        setIsTransitioning,
         mostrarElementos3D,
-        adminPanelActivo 
+        adminPanelActivo,
+        capturaAbierta
     } = useTourStore();
 
     const infoNodo = nodos[nodoActual];
+    // Ocultamos hotspots/labels mientras se encuadra/toma una captura, para que
+    // la foto (y su previsualización en vivo) salga limpia, sin íconos.
+    const mostrarElementosInteractivos = mostrarElementos3D && !capturaAbierta;
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -62,14 +66,14 @@ export default function Escena360() {
             <EsferaProgresiva rutaBajaRes={infoNodo.archivoBlur || infoNodo.archivo} rutaAltaRes={infoNodo.archivo} />
 
             {/* EL SWAP MÁGICO DE HOTSPOTS */}
-            {mostrarElementos3D && infoNodo.hotspots?.map((hotspot: any, index: number) => (
-                adminPanelActivo === 'editorHotspots' 
+            {mostrarElementosInteractivos && infoNodo.hotspots?.map((hotspot: any, index: number) => (
+                adminPanelActivo === 'editorHotspots'
                     ? <HotspotEditable key={`edit-hs-${hotspot.id || index}`} datos={hotspot} />
                     : <Hotspot key={`hotspot-${hotspot.id || index}`} datos={hotspot} />
             ))}
 
             {/* 🚨 EL NUEVO SWAP MÁGICO DE LABELS */}
-            {mostrarElementos3D && infoNodo.labels?.map((label: any, index: number) => (
+            {mostrarElementosInteractivos && infoNodo.labels?.map((label: any, index: number) => (
                 adminPanelActivo === 'editorLabels'
                     ? <LabelEditable key={`edit-lbl-${label.id || index}`} datos={label} />
                     : <Label key={`label-${label.id || index}`} datos={label} />
