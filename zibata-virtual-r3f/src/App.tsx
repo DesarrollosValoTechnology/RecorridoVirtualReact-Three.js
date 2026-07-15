@@ -1,7 +1,7 @@
 // src/App.tsx
-import { useEffect, Suspense, useRef, useState } from 'react';
+import { useEffect, Suspense, useRef, useState, lazy } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Environment, CameraControls } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import { useTourStore } from './store/useTourStore';
 import { registrarCanvasCaptura } from './utils/capturaPantalla';
 import Escena360 from './components/Escena360';
@@ -11,17 +11,21 @@ import FadeOverlay from './components/Fadeoverlay';
 import PantallaCarga from './components/PantallaCarga';
 import IntroAnimacion from './components/IntroAnimacion';
 import { actualizarMinimapaFrame, moverMapaANodo } from './utils/mapaRadar';
-import AdminNuevoNodo from './components/AdminMode';
-import AdminSidebar from './components/AdminSidebar';
-import AdminExplorador from './components/AdminExplorador';
-import PanelEditorHotspots from './components/PanelEditorHotspots';
-import PanelEditarNodo from './components/PanelEditarNodo';
-import PanelEditorLabels from './components/PanelEditorLabels';
 import IndicadorFOV from './components/IndicadorFOV';
 import ControlZoomFOV from './components/ControlZoomFOV';
 import LogoCielo from './components/LogoCielo';
 import TooltipPreview from './components/TooltipPreview';
 import CapturaFoto from './components/CapturaFoto';
+
+// 🚨 Lazy: el modo admin (?admin=true) es un caso raro para el visitante normal.
+// Con import() en vez de import estático, Vite separa cada uno en su propio chunk
+// y el navegador de un visitante normal NUNCA los descarga.
+const AdminNuevoNodo = lazy(() => import('./components/AdminMode'));
+const AdminSidebar = lazy(() => import('./components/AdminSidebar'));
+const AdminExplorador = lazy(() => import('./components/AdminExplorador'));
+const PanelEditorHotspots = lazy(() => import('./components/PanelEditorHotspots'));
+const PanelEditarNodo = lazy(() => import('./components/PanelEditarNodo'));
+const PanelEditorLabels = lazy(() => import('./components/PanelEditorLabels'));
 
 function SincronizadorRadar({ controlsRef }: { controlsRef: any }) {
     const { camera } = useThree();
@@ -205,14 +209,14 @@ function App() {
         
         {/* --- MODO EDITOR UI --- */}
         {isAdmin && (
-            <>
+            <Suspense fallback={null}>
                 <AdminSidebar />
                 {adminPanelActivo === 'explorador' && <AdminExplorador />}
                 {adminPanelActivo === 'nuevoNodo' && <AdminNuevoNodo />}
                 {adminPanelActivo === 'editorLabels' && <PanelEditorLabels />}
                 {adminPanelActivo === 'editorHotspots' && <PanelEditorHotspots />}
                 {adminPanelActivo === 'editarNodo' && <PanelEditarNodo />}
-            </>
+            </Suspense>
         )}
 
         {/* --- 1. SIEMPRE VISIBLE AL INICIO --- */}

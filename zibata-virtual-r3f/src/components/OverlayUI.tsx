@@ -84,6 +84,8 @@ export default function OverlayUI({ esAppEscritorio, isAdmin, onVolverAlMenu }: 
             >
                 <div id="info-titulo">{infoNodo.ui?.titulo    || t["UI_TITULO_DEFECTO"]}</div>
                 <div id="info-categoria">{infoNodo.ui?.categoria || t["UI_CATEGORIA_DEFECTO"]}</div>
+                {/* Fecha en que se tomaron las fotos 360 (solo escritorio: en móvil no hay espacio) */}
+                <div id="info-fecha">{t["UI_FECHA_FOTOS"]}</div>
             </div>
 
             {/* 1.5 VOLVER A VISTA AÉREA (solo si NO estamos ya en una toma aérea) */}

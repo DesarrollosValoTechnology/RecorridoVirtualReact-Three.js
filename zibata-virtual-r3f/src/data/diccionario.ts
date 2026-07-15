@@ -42,7 +42,8 @@ export const diccionario: Record<string, Record<string, string>> = {
         "UI_MAPA_SATELITE": "Satélite",
         "UI_MAPA_HIBRIDO": "Híbrido",
         "UI_MAPA_PLANO": "Mapa",
-        "UI_CAPTURA_PISTA": "Ajusta tu vista moviéndote y haciendo zoom para capturar la toma perfecta."
+        "UI_CAPTURA_PISTA": "Ajusta tu vista moviéndote y haciendo zoom para capturar la toma perfecta.",
+        "UI_FECHA_FOTOS": "Julio 2026"
     },
     en: {
         // --- 3D LABELS ---
@@ -86,7 +87,8 @@ export const diccionario: Record<string, Record<string, string>> = {
         "UI_MAPA_SATELITE": "Satellite",
         "UI_MAPA_HIBRIDO": "Hybrid",
         "UI_MAPA_PLANO": "Map",
-        "UI_CAPTURA_PISTA": "Adjust your view by moving and zooming in and out to capture the perfect shot."
+        "UI_CAPTURA_PISTA": "Adjust your view by moving and zooming in and out to capture the perfect shot.",
+        "UI_FECHA_FOTOS": "July 2026"
     }
 };
 

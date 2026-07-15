@@ -151,6 +151,14 @@ canvas {
     color: rgba(255, 255, 255, 0.85);
 }
 
+#info-fecha {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 2px;
+}
+
 .ui-top-right {
     position: absolute;
     top: 25px; right: 25px;
@@ -578,6 +586,8 @@ button,
     }
     #info-titulo { font-size: 16px !important; }
     #info-categoria { font-size: 9px !important; }
+    /* Sin espacio en móvil para la fecha de las fotos */
+    #info-fecha { display: none !important; }
 
     .ui-top-right {
         top: 15px !important;

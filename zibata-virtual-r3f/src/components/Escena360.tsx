@@ -1,13 +1,16 @@
 // src/components/Escena360.tsx
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, lazy } from 'react';
 import { useTourStore } from '../store/useTourStore';
-import Hotspot from './Hotspot'; 
+import Hotspot from './Hotspot';
 import Label from './Label';
-import EsferaProgresiva from './EsferaProgresiva'; 
+import EsferaProgresiva from './EsferaProgresiva';
 import { useFrame, useThree } from '@react-three/fiber';
-import * as THREE from 'three'; 
-import HotspotEditable from './HotspotEditable'; 
-import LabelEditable from './LabelEditable'; // 🚨 1. IMPORTAMOS EL NUEVO LABEL EDITABLE
+import * as THREE from 'three';
+
+// 🚨 Lazy: solo se usan en modo admin (arrastrar hotspots/labels con TransformControls).
+// Un visitante normal nunca los descarga.
+const HotspotEditable = lazy(() => import('./HotspotEditable'));
+const LabelEditable = lazy(() => import('./LabelEditable'));
 
 function SincronizadorMinimapa({ offsetGrados = 0 }: { offsetGrados: number }) {
     const { camera } = useThree();
