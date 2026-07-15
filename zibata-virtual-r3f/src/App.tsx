@@ -20,6 +20,7 @@ import PanelEditarNodo from './components/PanelEditarNodo';
 import PanelEditorLabels from './components/PanelEditorLabels';
 import IndicadorFOV from './components/IndicadorFOV';
 import ControlZoomFOV from './components/ControlZoomFOV';
+import LogoCielo from './components/LogoCielo';
 import TooltipPreview from './components/TooltipPreview';
 
 function SincronizadorRadar({ controlsRef }: { controlsRef: any }) {
@@ -238,6 +239,7 @@ function App() {
                 <ControlZoomFOV />
                 <Suspense fallback={null}>
                     <Escena360 />
+                    <LogoCielo />
                 </Suspense>
                 <OrbitControls
                     ref={controlsRef}
