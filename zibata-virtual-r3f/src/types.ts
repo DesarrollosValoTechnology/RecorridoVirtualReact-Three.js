@@ -29,6 +29,7 @@ export interface ILabel {
     texto_en?: string;   // ✅ Añadido: campo inglés
     target: IVector3;
     offset: IVector3;
+    hotspotId?: string;  // Si viene de un hotspot (texto agregado desde su editor), su id
 }
 
 export interface INodo {

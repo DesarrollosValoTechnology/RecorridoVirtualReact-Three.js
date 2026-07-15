@@ -17,11 +17,11 @@ export default function LabelEditable({ datos }: any) {
 
     return (
         <group>
-            {/* Punto de anclaje editable */}
-            <mesh
-                position={posTarget}
-                onClick={(e) => { e.stopPropagation(); setLabelSeleccionadoId(datos.id); }}
-            >
+            {/* Punto de anclaje: solo visual + punto de arrastre del gizmo (cuando está
+                seleccionado). Ya NO es clicable para seleccionar: al estar exactamente
+                en la misma posición que su hotspot, competía por el clic con él. Ahora
+                la única forma de seleccionar el label es haciéndole clic a su texto. */}
+            <mesh position={posTarget}>
                 <sphereGeometry args={[isSelected ? 8 : 5, 16, 16]} />
                 <meshBasicMaterial
                     color={isSelected ? "#a855f7" : "#444"}
@@ -69,17 +69,25 @@ export default function LabelEditable({ datos }: any) {
             />
 
             <group position={posEtiqueta}>
-                <Html center distanceFactor={15}>
-                    <div style={{
-                        padding: '5px 10px',
-                        background: isSelected ? '#e2a74a' : 'rgba(0,0,0,0.8)',
-                        color: isSelected ? 'black' : 'white',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        whiteSpace: 'nowrap',
-                        border: '1px solid white',
-                        fontWeight: 'bold'
-                    }}>
+                {/* Sin distanceFactor: a la distancia típica de estos hotspots (~450-500u)
+                    ese escalado dejaba el texto microscópico e imposible de ver/clicar. */}
+                <Html center zIndexRange={[100, 0]}>
+                    {/* Clicable directamente en el texto: es un blanco más grande y,
+                        al estar desplazado del hotspot (offset), no compite con su clic. */}
+                    <div
+                        onClick={() => setLabelSeleccionadoId(datos.id)}
+                        style={{
+                            padding: '5px 10px',
+                            background: isSelected ? '#e2a74a' : 'rgba(0,0,0,0.8)',
+                            color: isSelected ? 'black' : 'white',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            whiteSpace: 'nowrap',
+                            border: '1px solid white',
+                            fontWeight: 'bold',
+                            cursor: 'pointer'
+                        }}
+                    >
                         {textoPreview}
                     </div>
                 </Html>

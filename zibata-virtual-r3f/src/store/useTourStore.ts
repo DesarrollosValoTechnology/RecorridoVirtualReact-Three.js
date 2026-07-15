@@ -54,6 +54,7 @@ interface TourState {
     hotspotSeleccionadoId: string | null;
     setHotspotSeleccionadoId: (id: string | null) => void;
     actualizarPropiedadesHotspot: (id: string, destino: string, tipo: string) => Promise<void>;
+    actualizarTextoHotspot: (hotspotId: string, texto: string) => Promise<void>;
     borrarHotspot: (id: string) => Promise<void>;
     labelSeleccionadoId: string | null;
     setLabelSeleccionadoId: (id: string | null) => void;
@@ -133,6 +134,7 @@ export const useTourStore = create<TourState>((set, get) => ({
                     texto_en: l.texto_en, // 👈 Extraemos el inglés
                     target:   { x: l.x, y: l.y, z: l.z },
                     offset:   { x: 0, y: l.offset_y || 15, z: 0 },
+                    hotspotId: l.hotspot_id || undefined,
                 })),
             };
         });
@@ -203,6 +205,57 @@ export const useTourStore = create<TourState>((set, get) => ({
         if (!error) {
             set({ hotspotSeleccionadoId: null });
             get().cargarNodos();
+        }
+    },
+
+    // Agrega/actualiza/quita el label "atado" a un hotspot (vacío = el hotspot va solo).
+    actualizarTextoHotspot: async (hotspotId, texto) => {
+        const nodos = get().nodos;
+        let nodoOrigenId: string | null = null;
+        let hotspot: any = null;
+        for (const nodo of Object.values(nodos)) {
+            const encontrado = (nodo as any).hotspots?.find((h: any) => h.id === hotspotId);
+            if (encontrado) {
+                nodoOrigenId = Object.keys(nodos).find((k) => nodos[k] === nodo) || null;
+                hotspot = encontrado;
+                break;
+            }
+        }
+        if (!hotspot || !nodoOrigenId) return;
+
+        const labelExistente = Object.values(nodos)
+            .flatMap((nodo: any) => nodo.labels || [])
+            .find((l: any) => l.hotspotId === hotspotId);
+
+        const textoLimpio = texto.trim();
+
+        try {
+            if (!textoLimpio) {
+                if (labelExistente) {
+                    const { error } = await supabase.from('labels').delete().eq('id', labelExistente.id);
+                    if (error) throw error;
+                }
+            } else if (labelExistente) {
+                const { error } = await supabase.from('labels')
+                    .update({ texto_es: textoLimpio, texto_en: textoLimpio })
+                    .eq('id', labelExistente.id);
+                if (error) throw error;
+            } else {
+                const { error } = await supabase.from('labels').insert([{
+                    nodo_id: nodoOrigenId,
+                    hotspot_id: hotspotId,
+                    texto_es: textoLimpio,
+                    texto_en: textoLimpio,
+                    x: hotspot.posicion.x,
+                    y: hotspot.posicion.y,
+                    z: hotspot.posicion.z,
+                    offset_y: 60,
+                }]);
+                if (error) throw error;
+            }
+            await get().cargarNodos();
+        } catch (error) {
+            console.error('Error al actualizar el texto del hotspot:', error);
         }
     },
 

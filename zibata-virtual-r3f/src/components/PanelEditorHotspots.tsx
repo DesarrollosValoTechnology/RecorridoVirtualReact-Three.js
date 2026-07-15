@@ -1,16 +1,25 @@
 import type { CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
 import { useTourStore } from '../store/useTourStore';
 
 export default function PanelEditorHotspots() {
-    const { 
-        setAdminPanelActivo, crearNuevoHotspot, 
-        nodos, nodoActual, hotspotSeleccionadoId, 
-        actualizarPropiedadesHotspot, borrarHotspot 
+    const {
+        setAdminPanelActivo, crearNuevoHotspot,
+        nodos, nodoActual, hotspotSeleccionadoId,
+        actualizarPropiedadesHotspot, actualizarTextoHotspot, borrarHotspot
     } = useTourStore();
 
     // Buscamos la info del hotspot que el usuario haya seleccionado (al hacerle click en modo admin)
     const hotspotsDelNodo = nodos[nodoActual]?.hotspots || [];
     const hotspotActivo = hotspotsDelNodo.find((h: any) => h.id === hotspotSeleccionadoId);
+
+    // El label (si existe) que quedó atado a este hotspot
+    const labelDelHotspot = nodos[nodoActual]?.labels?.find((l: any) => l.hotspotId === hotspotActivo?.id);
+    const [texto, setTexto] = useState(labelDelHotspot?.texto_es || '');
+
+    useEffect(() => {
+        setTexto(labelDelHotspot?.texto_es || '');
+    }, [hotspotActivo?.id, labelDelHotspot?.texto_es]);
 
     // Lista de todos los nodos disponibles para usar como destino
     const opcionesDestino = Object.entries(nodos).map(([id, info]: any) => ({
@@ -82,7 +91,17 @@ export default function PanelEditorHotspots() {
                             <option value="info" style={{ color: 'black' }}>ℹ️ Información</option>
                         </select>
 
-                        <button 
+                        <label style={{ display: 'block', fontSize: '10px', color: '#ccc', marginBottom: '5px', marginTop: '10px' }}>TEXTO (opcional)</label>
+                        <input
+                            style={inputPremiumStyle}
+                            type="text"
+                            value={texto}
+                            placeholder="Vacío = el hotspot va solo"
+                            onChange={(e) => setTexto(e.target.value)}
+                            onBlur={() => texto !== (labelDelHotspot?.texto_es || '') && actualizarTextoHotspot(hotspotActivo.id, texto)}
+                        />
+
+                        <button
                             onClick={() => borrarHotspot(hotspotActivo.id)}
                             style={{ width: '100%', padding: '10px', marginTop: '15px', backgroundColor: 'rgba(255, 77, 77, 0.2)', color: '#ff4d4d', border: '1px solid rgba(255, 77, 77, 0.4)', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
                         >

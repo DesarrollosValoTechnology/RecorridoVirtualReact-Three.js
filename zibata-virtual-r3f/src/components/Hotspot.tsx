@@ -12,7 +12,7 @@ const ICONOS: Record<string, string> = {
     info:  `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="black" stroke="white" stroke-width="1.5"/><g transform="translate(4.8, 4.8) scale(0.6)" fill="white" stroke="white" stroke-width="0.5"><circle cx="12" cy="12" r="10" fill="none" stroke-width="1.5"/><path d="M12 16v-4"/><path d="M12 8h.01" stroke-width="3"/></g></svg>`,
 };
 
-const SVG_URLS: Record<string, string> = {
+export const SVG_URLS: Record<string, string> = {
     drone: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(ICONOS.drone),
     casa:  'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(ICONOS.casa),
     pasos: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(ICONOS.pasos),
