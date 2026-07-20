@@ -167,6 +167,11 @@ canvas {
     align-items: center;
 }
 
+/* Botón "más opciones" que colapsa la barra de herramientas: solo existe en móvil */
+.btn-herramientas-toggle {
+    display: none;
+}
+
 /* Embebido en iframe (ej. kiosco de ventas): dejamos libre la franja superior para la barra
    flotante de la app anfitriona, recorriendo hacia abajo el título y los controles. */
 body.en-iframe #info-nodo-actual {
@@ -323,6 +328,11 @@ body.en-iframe #btn-activar-zonas {
 .social-icons-row {
     display: flex;
     gap: 12px;
+}
+
+/* Botón que colapsa la barra de redes sociales: solo existe en móvil */
+.btn-social-toggle {
+    display: none;
 }
 
 /* ==========================================
@@ -636,37 +646,43 @@ button,
         top: calc(15px + 68px) !important;
     }
 
-    /* En móvil el título y los íconos ocupan la franja superior; bajamos el botón para no chocar */
-    #btn-volver-aerea {
-        top: 70px !important;
-        font-size: 11px !important;
-        padding: 8px 14px !important;
-    }
-
-    body.en-iframe #btn-volver-aerea {
-        top: calc(70px + 68px) !important;
-    }
-
+    /* En móvil van pegados debajo del bloque de título ("Zibatá" / categoría), a la
+       izquierda, en vez de centrados arriba (donde chocaban con Contáctanos). */
+    #btn-volver-aerea,
     #btn-activar-zonas {
-        top: 70px !important;
+        top: 72px !important;
+        left: 15px !important;
+        transform: none !important;
         font-size: 11px !important;
         padding: 8px 14px !important;
     }
 
+    #btn-volver-aerea:hover,
+    #btn-activar-zonas:hover {
+        transform: none !important;
+    }
+
+    body.en-iframe #btn-volver-aerea,
     body.en-iframe #btn-activar-zonas {
-        top: calc(70px + 68px) !important;
+        top: calc(72px + 68px) !important;
     }
 
+    /* Barra de herramientas (captura, girar, idioma, compartir, pantalla completa):
+       colapsada detrás del botón "•••" para dejar más espacio en pantalla. */
     .herramientas-pill {
-    display: flex !important;
-    order: 2; /* Va debajo del botón contacto */
-    padding: 6px 10px !important;
-    gap: 6px !important;
+        display: none !important;
+        order: 2;
+        padding: 6px 10px !important;
+        gap: 6px !important;
     }
 
-    /* Oculta solo el botón VR en móvil */
-    .herramientas-pill button:first-child {
-        display: none !important;
+    .herramientas-pill.herramientas-abiertas {
+        display: flex !important;
+    }
+
+    .btn-herramientas-toggle {
+        display: flex !important;
+        order: 3;
     }
 
     /* El botón contacto arriba */
@@ -686,6 +702,19 @@ button,
     }
     .texto-follow {
         display: none !important;
+    }
+
+    /* Redes sociales: colapsadas detrás de un botón, igual que las herramientas. */
+    .social-icons-row {
+        display: none !important;
+    }
+
+    .ui-bottom-left.social-abierto .social-icons-row {
+        display: flex !important;
+    }
+
+    .btn-social-toggle {
+        display: flex !important;
     }
 
     /* 👇 FIX SAFE AREA iOS */
@@ -951,13 +980,23 @@ button,
 
 /* --- 📱 DISEÑO RESPONSIVE (MÓVIL) --- */
 @media (max-width: 768px) {
+    /* Chico por defecto para no estorbar la vista; al tocarlo se expande al tamaño
+       "normal" de antes (120px) unos segundos y se vuelve a encoger solo. */
     .modo-minimapa {
-        width: 120px; /* Un poco más pequeño para móvil */
-        height: 120px;
+        width: 64px;
+        height: 64px;
         /* 🚨 SÓLO AQUÍ SUBE PARA LIBRAR LA BARRA */
-        bottom: 115px; 
+        bottom: 115px;
         right: 15px;
         border-width: 2px;
+        pointer-events: auto;
+        cursor: pointer;
+        transition: width 0.25s ease, height 0.25s ease;
+    }
+
+    .modo-minimapa.minimapa-expandido {
+        width: 120px;
+        height: 120px;
     }
 
     .modo-panel {

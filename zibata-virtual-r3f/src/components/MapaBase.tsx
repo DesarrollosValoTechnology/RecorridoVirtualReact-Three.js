@@ -37,6 +37,24 @@ export default function MapaBase({ esMinimapa = false }: Props) {
     const inicioDrag = useRef({ x: 0, y: 0 });
     const distanciaInicialRef = useRef<number | null>(null);
 
+    // En móvil el minimapa vive chico para no estorbar; al tocarlo se expande al
+    // tamaño normal unos segundos y luego se vuelve a encoger solo.
+    const [expandidoMovil, setExpandidoMovil] = useState(false);
+    const timeoutExpandidoRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const alTocarMinimapa = () => {
+        if (!esMinimapa) return;
+        setExpandidoMovil(true);
+        if (timeoutExpandidoRef.current) clearTimeout(timeoutExpandidoRef.current);
+        timeoutExpandidoRef.current = setTimeout(() => setExpandidoMovil(false), 3000);
+    };
+
+    useEffect(() => {
+        return () => {
+            if (timeoutExpandidoRef.current) clearTimeout(timeoutExpandidoRef.current);
+        };
+    }, []);
+
     // Recalcular escala si cambian el tamaño de la ventana
     useEffect(() => {
         const handleResize = () => {
@@ -92,7 +110,8 @@ export default function MapaBase({ esMinimapa = false }: Props) {
 
     return (
         <div
-            className={`contenedor-mapa ${esMinimapa ? 'modo-minimapa' : 'modo-panel'}`}
+            className={`contenedor-mapa ${esMinimapa ? 'modo-minimapa' : 'modo-panel'} ${expandidoMovil ? 'minimapa-expandido' : ''}`}
+            onClick={alTocarMinimapa}
             onWheel={(e) => {
                 if (esMinimapa) return;
                 setEscala(prev => Math.min(Math.max(escalaBase, prev * (e.deltaY > 0 ? 0.9 : 1.1)), 4));

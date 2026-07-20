@@ -1,14 +1,28 @@
 // src/components/SocialBar.tsx
+import { useRef, useState } from 'react';
 import { useTourStore } from '../store/useTourStore';
 import { diccionario } from '../data/diccionario';
+import { useClickAfuera } from '../utils/useClickAfuera';
 
 export default function SocialBar() {
     // 🚨 El Hook y el atajo "t" deben ir ADENTRO del componente para que reaccionen a los cambios
     const idiomaActual = useTourStore(state => state.idiomaActual);
     const t = diccionario[idiomaActual];
 
+    // Colapsable solo en móvil (en escritorio la CSS ignora este estado y siempre se ve completa)
+    const [abierto, setAbierto] = useState(false);
+    const contenedorRef = useRef<HTMLDivElement>(null);
+    useClickAfuera(contenedorRef, abierto, () => setAbierto(false));
+
     return (
-        <div className="ui-bottom-left">
+        <div ref={contenedorRef} className={`ui-bottom-left ${abierto ? 'social-abierto' : ''}`}>
+            <button
+                className="btn-icon btn-social-toggle"
+                title="Síguenos en redes"
+                onClick={() => setAbierto((v) => !v)}
+            >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+            </button>
             <span className="texto-follow">{t["UI_SIGUENOS"]}</span>
             <div className="social-icons-row">
                 <a href="https://facebook.com/zibata.mx" target="_blank" rel="noreferrer" className="btn-icon">

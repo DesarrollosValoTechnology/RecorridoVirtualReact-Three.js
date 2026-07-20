@@ -1,8 +1,10 @@
 // src/components/OverlayUI.tsx
+import { useRef, useState } from 'react';
 import { useTourStore, CATEGORIA_VISTA_AEREA } from '../store/useTourStore';
 import SocialBar from './SocialBar';
 import { diccionario } from '../data/diccionario';
 import MapaBase from './MapaBase';
+import { useClickAfuera } from '../utils/useClickAfuera';
 
 // 🚨 1. LE DECIMOS A TYPESCRIPT QUÉ DATOS VAMOS A RECIBIR
 interface OverlayProps {
@@ -23,6 +25,12 @@ export default function OverlayUI({ esAppEscritorio, isAdmin, onVolverAlMenu }: 
     const t = diccionario[idiomaActual];
 
     const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+    // Barra de herramientas (arriba a la derecha): colapsable solo en móvil
+    // (en escritorio la CSS ignora este estado y siempre se ve completa)
+    const [herramientasAbiertas, setHerramientasAbiertas] = useState(false);
+    const herramientasRef = useRef<HTMLDivElement>(null);
+    useClickAfuera(herramientasRef, herramientasAbiertas, () => setHerramientasAbiertas(false));
 
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {
@@ -122,8 +130,15 @@ export default function OverlayUI({ esAppEscritorio, isAdmin, onVolverAlMenu }: 
             )}
 
             {/* 2. BOTONES ACCIÓN (Arriba Derecha) */}
-            <div className="ui-top-right">
-                <div className="herramientas-pill">
+            <div className="ui-top-right" ref={herramientasRef}>
+                <button
+                    className="btn-icon btn-herramientas-toggle"
+                    title="Más opciones"
+                    onClick={() => setHerramientasAbiertas((v) => !v)}
+                >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>
+                </button>
+                <div className={`herramientas-pill ${herramientasAbiertas ? 'herramientas-abiertas' : ''}`}>
                     <button
                         className="btn-icon"
                         title="Tomar captura"
