@@ -10,7 +10,7 @@ const ICONOS_TIPO: Record<string, string> = {
 // 🎨 SISTEMA DE DISEÑO "RAYCAST PREMIUM"
 // ==========================================
 const panelStyle: CSSProperties = {
-    position: 'absolute', top: '20px', left: '90px', width: '380px',
+    position: 'absolute', top: '20px', left: '90px', width: '440px',
     maxHeight: 'calc(100vh - 40px)', display: 'flex', flexDirection: 'column',
     backgroundColor: 'rgba(15, 15, 15, 0.65)', backdropFilter: 'blur(16px)',
     borderRadius: '24px', border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -77,7 +77,18 @@ export default function AdminExplorador() {
         actualizarPropiedadesHotspot, borrarHotspot, crearNuevoHotspot,
         actualizarPropiedadesLabel, borrarLabel, crearNuevoLabel,
         borrarNodo, generarBlurParaNodo, generarMiniaturaParaNodo, reoptimizarFoto360ParaNodo,
+        marcarNodoPrincipal,
     } = useTourStore();
+    const [marcandoPrincipalId, setMarcandoPrincipalId] = useState<string | null>(null);
+
+    const handleMarcarPrincipal = async (id: string) => {
+        setMarcandoPrincipalId(id);
+        try {
+            await marcarNodoPrincipal(id);
+        } finally {
+            setMarcandoPrincipalId(null);
+        }
+    };
 
     const [busqueda, setBusqueda] = useState('');
     const [expandido, setExpandido] = useState<Record<string, boolean>>({});
@@ -89,8 +100,10 @@ export default function AdminExplorador() {
     const [generandoMiniId, setGenerandoMiniId] = useState<string | null>(null);
     const [reoptimizandoId, setReoptimizandoId] = useState<string | null>(null);
 
+    // Mostramos el ID, no el título: puede haber varios nodos con el mismo título
+    // público —ej. "Zibatá Vista Aérea"— y el ID es lo único que los distingue aquí.
     const opcionesDestino = useMemo(
-        () => Object.entries(nodos).map(([id, info]: any) => ({ id, titulo: info.ui?.titulo || id })),
+        () => Object.entries(nodos).map(([id]: any) => ({ id, titulo: id })),
         [nodos]
     );
 
@@ -275,20 +288,32 @@ export default function AdminExplorador() {
 
                     return (
                         <div key={id} style={tarjetaStyle(esActivo)}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
                                 <img
                                     src={info.ui?.miniatura}
                                     alt=""
-                                    width={44}
-                                    height={32}
-                                    style={{ width: '44px', height: '32px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0, backgroundColor: '#111' }}
+                                    width={56}
+                                    height={42}
+                                    style={{ width: '56px', height: '42px', objectFit: 'cover', borderRadius: '8px', flexShrink: 0, backgroundColor: '#111' }}
                                 />
                                 <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => toggleExpandido(id)}>
-                                    <div style={{ fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                        {info.ui?.titulo || id} {esActivo && <span style={{ color: '#5cb82a', fontSize: '10px' }}>● AQUÍ</span>}
+                                    <div style={{ fontSize: '14px', fontWeight: 600, lineHeight: 1.35 }}>
+                                        {info.ui?.titulo || id} {esActivo && <span style={{ color: '#5cb82a', fontSize: '10px' }}>● AQUÍ</span>} {info.esPrincipal && <span style={{ color: '#ffd54a', fontSize: '10px' }}>★ PRINCIPAL</span>}
                                     </div>
-                                    <div style={{ fontSize: '10px', color: '#888' }}>{hotspots.length} hotspots · {labels.length} etiquetas</div>
+                                    <div style={{ fontSize: '11px', color: '#7bd88f', fontFamily: 'monospace', marginTop: '2px' }}>{id}</div>
+                                    <div style={{ fontSize: '10px', color: '#888', marginTop: '2px' }}>{hotspots.length} hotspots · {labels.length} etiquetas</div>
                                 </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '6px', marginTop: '10px' }}>
+                                <button
+                                    title={info.esPrincipal ? 'Este es el nodo principal: el recorrido inicia aquí' : 'Marcar como nodo principal (con el que inicia el recorrido)'}
+                                    onClick={() => handleMarcarPrincipal(id)}
+                                    disabled={!!info.esPrincipal || marcandoPrincipalId === id}
+                                    style={{ ...miniBtnStyle, color: info.esPrincipal ? '#ffd54a' : '#888' }}
+                                >
+                                    {marcandoPrincipalId === id ? '⏳' : (info.esPrincipal ? '⭐' : '☆')}
+                                </button>
                                 <button
                                     title="Reoptimizar foto 360 (si excede 8192x4096, el navegador la reescala solo con mala calidad)"
                                     onClick={() => handleReoptimizarFoto360(id)}

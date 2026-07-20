@@ -22,8 +22,10 @@ export default function PanelEditorHotspots() {
     }, [hotspotActivo?.id, labelDelHotspot?.texto_es]);
 
     // Lista de todos los nodos disponibles para usar como destino
-    const opcionesDestino = Object.entries(nodos).map(([id, info]: any) => ({
-        id, titulo: info.ui?.titulo || id
+    // (mostramos el ID, no el título: puede haber varios nodos con el mismo título
+    // público —ej. "Zibatá Vista Aérea"— y el ID es lo único que los distingue aquí)
+    const opcionesDestino = Object.entries(nodos).map(([id]: any) => ({
+        id, titulo: id
     }));
 
     // ==========================================

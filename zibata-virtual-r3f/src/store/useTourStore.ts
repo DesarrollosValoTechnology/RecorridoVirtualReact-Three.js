@@ -40,12 +40,15 @@ interface TourState {
     cargarNodo: (id: string) => void;
     tooltipHover: { titulo: string, miniatura: string, x: number, y: number } | null;
     setTooltipHover: (data: any) => void;
-    adminPanelActivo: 'nuevoNodo' | 'editorHotspots' | 'editarNodo' | 'editorLabels' | 'explorador' | null;
-    setAdminPanelActivo: (panel: 'nuevoNodo' | 'editorHotspots' | 'editarNodo' | 'editorLabels' | 'explorador' | null) => void;
+    adminPanelActivo: 'nuevoNodo' | 'editorHotspots' | 'editarNodo' | 'editorLabels' | 'editorZonas' | 'explorador' | null;
+    setAdminPanelActivo: (panel: 'nuevoNodo' | 'editorHotspots' | 'editarNodo' | 'editorLabels' | 'editorZonas' | 'explorador' | null) => void;
     actualizarPosicionLabel: (id: string, x: number, y: number, z: number) => Promise<void>;
     actualizarNodoActual: (cambios: any) => Promise<void>;
     borrarNodoActual: () => Promise<{ ok: boolean; error?: string }>;
     borrarNodo: (id: string) => Promise<{ ok: boolean; error?: string }>;
+    marcarNodoPrincipal: (id: string) => Promise<void>;
+    zonasActivas: boolean;
+    toggleZonasActivas: () => void;
     generarBlurParaNodo: (id: string) => Promise<{ ok: boolean; error?: string }>;
     generarMiniaturaParaNodo: (id: string) => Promise<{ ok: boolean; error?: string }>;
     reoptimizarFoto360ParaNodo: (id: string) => Promise<{ ok: boolean; error?: string; sinCambios?: boolean }>;
@@ -65,6 +68,22 @@ interface TourState {
     setFovActual: (fov: number) => void;
     capturaAbierta: boolean;
     setCapturaAbierta: (val: boolean) => void;
+
+    // --- EDITOR: ZONAS (polígonos clicables sobre la esfera) ---
+    zonaSeleccionadaId: string | null;
+    setZonaSeleccionadaId: (id: string | null) => void;
+    verticeZonaSeleccionado: number | null;
+    setVerticeZonaSeleccionado: (indice: number | null) => void;
+    dibujandoZona: boolean;
+    setDibujandoZona: (val: boolean) => void;
+    puntosZonaEnProceso: { x: number; y: number; z: number }[];
+    agregarPuntoZonaEnProceso: (x: number, y: number, z: number) => void;
+    quitarUltimoPuntoZonaEnProceso: () => void;
+    limpiarPuntosZonaEnProceso: () => void;
+    guardarNuevaZona: (nodoOrigenId: string, destino: string, nombre: string, color: string) => Promise<void>;
+    actualizarPropiedadesZona: (id: string, campo: string, valor: any) => Promise<void>;
+    actualizarVerticeZona: (id: string, indice: number, x: number, y: number, z: number) => Promise<void>;
+    borrarZona: (id: string) => Promise<void>;
 }
 
 export const useTourStore = create<TourState>((set, get) => ({
@@ -86,6 +105,10 @@ export const useTourStore = create<TourState>((set, get) => ({
     nodos: {},
     cargandoNodos: true,
     ultimoNodoAereo: 'zibata',
+    // Las zonas (polígonos) empiezan apagadas: el visitante ve la foto limpia y las
+    // activa con el botón "Activar Zonas" cuando quiere explorar/viajar por ellas.
+    zonasActivas: false,
+    toggleZonasActivas: () => set((s) => ({ zonasActivas: !s.zonasActivas })),
 
     // --- CARGA DESDE SUPABASE ---
     cargarNodos: async () => {
@@ -94,7 +117,8 @@ export const useTourStore = create<TourState>((set, get) => ({
             .select(`
                 *,
                 hotspots:hotspots!hotspots_nodo_origen_id_fkey(*),
-                labels(*)
+                labels(*),
+                zonas:zonas!zonas_nodo_origen_id_fkey(*)
             `);
 
         if (error) {
@@ -136,11 +160,26 @@ export const useTourStore = create<TourState>((set, get) => ({
                     offset:   { x: 0, y: l.offset_y || 15, z: 0 },
                     hotspotId: l.hotspot_id || undefined,
                 })),
+                zonas: (nodoDB.zonas || []).map((z: any) => ({
+                    id:       z.id,
+                    destino:  z.nodo_destino_id,
+                    nombre:   z.nombre,
+                    color:    z.color || '#5CB82A',
+                    puntos:   z.puntos || [],
+                })),
+                esPrincipal: !!nodoDB.es_principal,
             };
         });
 
-        let nodoFinal = get().nodoActual;
-        if (!diccionarioNodos[nodoFinal]) nodoFinal = 'zibata';
+        // Preferimos el nodo que venga explícito en la URL (?nodo=...); si no hay o no
+        // existe, usamos el que esté marcado como "principal" desde el Explorador; si
+        // nadie lo marcó, caemos en 'zibata' (o, en su defecto, el primero disponible).
+        const params = new URLSearchParams(window.location.search);
+        const nodoDeUrl = params.get('nodo');
+        const nodoPrincipal = Object.keys(diccionarioNodos).find((id) => diccionarioNodos[id].esPrincipal);
+
+        let nodoFinal = (nodoDeUrl && diccionarioNodos[nodoDeUrl]) ? nodoDeUrl : (nodoPrincipal || 'zibata');
+        if (!diccionarioNodos[nodoFinal]) nodoFinal = Object.keys(diccionarioNodos)[0];
 
         // Si aterrizamos directo en una escena aérea (ej. al abrir la página), la recordamos
         // como punto de regreso para el botón "Volver a Vista Aérea"
@@ -259,6 +298,87 @@ export const useTourStore = create<TourState>((set, get) => ({
         }
     },
 
+    // --- EDITOR: ZONAS (polígonos clicables sobre la esfera) ---
+    zonaSeleccionadaId: null,
+    setZonaSeleccionadaId: (id) => set({ zonaSeleccionadaId: id, verticeZonaSeleccionado: null }),
+    verticeZonaSeleccionado: null,
+    setVerticeZonaSeleccionado: (indice) => set({ verticeZonaSeleccionado: indice }),
+    dibujandoZona: false,
+    setDibujandoZona: (val) => set({ dibujandoZona: val }),
+    puntosZonaEnProceso: [],
+    agregarPuntoZonaEnProceso: (x, y, z) => set((s) => ({ puntosZonaEnProceso: [...s.puntosZonaEnProceso, { x, y, z }] })),
+    quitarUltimoPuntoZonaEnProceso: () => set((s) => ({ puntosZonaEnProceso: s.puntosZonaEnProceso.slice(0, -1) })),
+    limpiarPuntosZonaEnProceso: () => set({ puntosZonaEnProceso: [], dibujandoZona: false }),
+
+    guardarNuevaZona: async (nodoOrigenId, destino, nombre, color) => {
+        const puntos = get().puntosZonaEnProceso;
+        if (puntos.length < 3) return;
+        const { error } = await supabase.from('zonas').insert([{
+            nodo_origen_id: nodoOrigenId,
+            nodo_destino_id: destino,
+            nombre,
+            color,
+            puntos,
+        }]);
+        if (error) { console.error('Error al guardar la zona:', error); return; }
+        set({ puntosZonaEnProceso: [], dibujandoZona: false });
+        await get().cargarNodos();
+    },
+
+    actualizarPropiedadesZona: async (id, campo, valor) => {
+        const columnMap: any = { destino: 'nodo_destino_id', nombre: 'nombre', color: 'color' };
+        const nodosActuales = { ...get().nodos };
+        for (const nId of Object.keys(nodosActuales)) {
+            const nodo = nodosActuales[nId];
+            if (nodo.zonas?.some((z: any) => z.id === id)) {
+                nodosActuales[nId] = {
+                    ...nodo,
+                    zonas: nodo.zonas.map((z: any) => (z.id === id ? { ...z, [campo]: valor } : z)),
+                };
+                break;
+            }
+        }
+        set({ nodos: nodosActuales });
+        const { error } = await supabase.from('zonas').update({ [columnMap[campo] || campo]: valor }).eq('id', id);
+        if (error) console.error('Error al actualizar zona:', error);
+    },
+
+    actualizarVerticeZona: async (id, indice, x, y, z) => {
+        const nodos = get().nodos;
+        let puntosNuevos: any = null;
+        for (const nId of Object.keys(nodos)) {
+            const zona = nodos[nId].zonas?.find((zz: any) => zz.id === id);
+            if (zona) {
+                puntosNuevos = zona.puntos.map((p: any, i: number) => (i === indice ? { x, y, z } : p));
+                break;
+            }
+        }
+        if (!puntosNuevos) return;
+        // Optimista local
+        const nodosActuales = { ...get().nodos };
+        for (const nId of Object.keys(nodosActuales)) {
+            const nodo = nodosActuales[nId];
+            if (nodo.zonas?.some((zz: any) => zz.id === id)) {
+                nodosActuales[nId] = {
+                    ...nodo,
+                    zonas: nodo.zonas.map((zz: any) => (zz.id === id ? { ...zz, puntos: puntosNuevos } : zz)),
+                };
+                break;
+            }
+        }
+        set({ nodos: nodosActuales });
+        const { error } = await supabase.from('zonas').update({ puntos: puntosNuevos }).eq('id', id);
+        if (error) console.error('Error al actualizar vértice de zona:', error);
+    },
+
+    borrarZona: async (id) => {
+        const { error } = await supabase.from('zonas').delete().eq('id', id);
+        if (!error) {
+            set({ zonaSeleccionadaId: null, verticeZonaSeleccionado: null });
+            await get().cargarNodos();
+        }
+    },
+
     // --- EDITOR: NODO ---
     actualizarNodoActual: async (cambios) => {
         const id = get().nodoActual;
@@ -285,6 +405,18 @@ export const useTourStore = create<TourState>((set, get) => ({
         }
     },
 
+    // Marca un nodo como el punto de inicio del recorrido (sin ?nodo= en la URL).
+    // Solo puede haber uno: primero desmarcamos el anterior, luego marcamos el nuevo.
+    marcarNodoPrincipal: async (id) => {
+        const { error: errDesmarcar } = await supabase.from('nodos').update({ es_principal: false }).eq('es_principal', true);
+        if (errDesmarcar) { console.error('Error al desmarcar el nodo principal anterior:', errDesmarcar); return; }
+
+        const { error: errMarcar } = await supabase.from('nodos').update({ es_principal: true }).eq('id', id);
+        if (errMarcar) { console.error('Error al marcar el nodo principal:', errMarcar); return; }
+
+        await get().cargarNodos();
+    },
+
     // --- EDITOR: BORRAR NODO ---
     // Genérico: borra cualquier nodo por id (lo usa tanto el panel de config del nodo activo como el Explorador)
     borrarNodo: async (id) => {
@@ -302,6 +434,12 @@ export const useTourStore = create<TourState>((set, get) => ({
             const { error: errLabels } = await supabase.from('labels').delete().eq('nodo_id', id);
             if (errLabels) throw errLabels;
 
+            // 2.5 Limpiar zonas que salen de este nodo o que otras zonas usan como destino
+            const { error: errZonasOrigen } = await supabase.from('zonas').delete().eq('nodo_origen_id', id);
+            if (errZonasOrigen) throw errZonasOrigen;
+            const { error: errZonasDestino } = await supabase.from('zonas').delete().eq('nodo_destino_id', id);
+            if (errZonasDestino) throw errZonasDestino;
+
             // 3. Borrar archivos de Storage asociados (best-effort, no bloquea el borrado si falla)
             const rutasArchivo = [nodoInfo?.archivo, nodoInfo?.archivoBlur, nodoInfo?.ui?.miniatura]
                 .filter((url): url is string => typeof url === 'string' && url.includes('/fotos_tour/'))
@@ -318,8 +456,10 @@ export const useTourStore = create<TourState>((set, get) => ({
             await get().cargarNodos();
 
             if (eraElActivo) {
-                const nodosRestantes = Object.keys(get().nodos);
-                const siguienteNodo = nodosRestantes.includes('zibata') ? 'zibata' : nodosRestantes[0];
+                const nodosActualizados = get().nodos;
+                const nodosRestantes = Object.keys(nodosActualizados);
+                const nodoPrincipal = nodosRestantes.find((nId) => nodosActualizados[nId].esPrincipal);
+                const siguienteNodo = nodoPrincipal || (nodosRestantes.includes('zibata') ? 'zibata' : nodosRestantes[0]);
 
                 if (siguienteNodo) {
                     const nuevaUrl = new URL(window.location.href);
@@ -436,7 +576,7 @@ export const useTourStore = create<TourState>((set, get) => ({
     // --- NAVEGACIÓN ---
     setNodoActual: (id) => {
         const esVistaAerea = get().nodos[id]?.ui?.categoria === CATEGORIA_VISTA_AEREA;
-        set({ nodoActual: id, ...(esVistaAerea ? { ultimoNodoAereo: id } : {}) });
+        set({ nodoActual: id, zonasActivas: false, ...(esVistaAerea ? { ultimoNodoAereo: id } : {}) });
     },
     setFadeActivo:        (val) => set({ fadeActivo: val }),
     setIsTransitioning:   (val) => set({ isTransitioning: val }),
@@ -472,6 +612,7 @@ export const useTourStore = create<TourState>((set, get) => ({
 
         set({
             isTransitioning: true, fadeActivo: true, menuAbierto: false, panelActivo: null,
+            zonasActivas: false,
             ...(esVistaAerea ? { ultimoNodoAereo: id } : {}),
         });
         setTimeout(() => set({ nodoActual: id }), 500);

@@ -99,6 +99,19 @@ export default function AdminSidebar() {
                     <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><path d="M7 7h.01"/>
                 </svg>
             </button>
+
+            {/* 5. EDITOR DE ZONAS (Verde, polígonos clicables) */}
+            <button
+                title="Editor de Zonas"
+                style={getBtnStyle(adminPanelActivo === 'editorZonas', hoveredBtn === 'zonas', '#5cb82a')}
+                onMouseEnter={() => setHoveredBtn('zonas')}
+                onMouseLeave={() => setHoveredBtn(null)}
+                onClick={() => togglePanel('editorZonas')}
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M2 12h20"/><path d="M12 2v20"/><path d="M12 2 2 7l10 5 10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/>
+                </svg>
+            </button>
         </div>
     );
 }

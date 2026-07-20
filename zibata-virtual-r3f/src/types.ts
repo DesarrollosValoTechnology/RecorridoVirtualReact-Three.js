@@ -32,6 +32,14 @@ export interface ILabel {
     hotspotId?: string;  // Si viene de un hotspot (texto agregado desde su editor), su id
 }
 
+export interface IZona {
+    id: string;
+    destino: string;
+    nombre?: string;
+    color: string;
+    puntos: IVector3[]; // vértices ordenados del polígono, sobre la superficie de la esfera
+}
+
 export interface INodo {
     tipo: 'foto';
     archivo: string;
@@ -45,6 +53,8 @@ export interface INodo {
     ui?: IUIInfo;
     hotspots?: IHotspot[];
     labels?: ILabel[];
+    zonas?: IZona[];
+    esPrincipal?: boolean;
 }
 
 export interface INodosTour {

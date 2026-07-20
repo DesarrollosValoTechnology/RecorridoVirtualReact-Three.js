@@ -26,6 +26,7 @@ const AdminExplorador = lazy(() => import('./components/AdminExplorador'));
 const PanelEditorHotspots = lazy(() => import('./components/PanelEditorHotspots'));
 const PanelEditarNodo = lazy(() => import('./components/PanelEditarNodo'));
 const PanelEditorLabels = lazy(() => import('./components/PanelEditorLabels'));
+const PanelEditorZonas = lazy(() => import('./components/PanelEditorZonas'));
 
 function SincronizadorRadar({ controlsRef }: { controlsRef: any }) {
     const { camera } = useThree();
@@ -214,6 +215,7 @@ function App() {
                 {adminPanelActivo === 'explorador' && <AdminExplorador />}
                 {adminPanelActivo === 'nuevoNodo' && <AdminNuevoNodo />}
                 {adminPanelActivo === 'editorLabels' && <PanelEditorLabels />}
+                {adminPanelActivo === 'editorZonas' && <PanelEditorZonas />}
                 {adminPanelActivo === 'editorHotspots' && <PanelEditorHotspots />}
                 {adminPanelActivo === 'editarNodo' && <PanelEditarNodo />}
             </Suspense>

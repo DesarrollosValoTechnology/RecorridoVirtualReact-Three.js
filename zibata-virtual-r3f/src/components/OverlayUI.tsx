@@ -106,6 +106,21 @@ export default function OverlayUI({ esAppEscritorio, isAdmin, onVolverAlMenu }: 
                 </button>
             )}
 
+            {/* 1.6 ACTIVAR ZONAS (solo si este nodo tiene zonas/polígonos dibujados) */}
+            {!!infoNodo.zonas?.length && (
+                <button
+                    id="btn-activar-zonas"
+                    onClick={() => store.toggleZonasActivas()}
+                    style={{ opacity: store.menuAbierto ? 0 : 1, pointerEvents: store.menuAbierto ? 'none' : 'auto' }}
+                    title={store.zonasActivas ? 'Ocultar las zonas interactivas' : 'Ver y viajar por zonas de este mapa'}
+                >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2 12h20"/><path d="M12 2v20"/><path d="M12 2 2 7l10 5 10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/>
+                    </svg>
+                    <span>{store.zonasActivas ? 'Ocultar Zonas' : 'Activar Zonas'}</span>
+                </button>
+            )}
+
             {/* 2. BOTONES ACCIÓN (Arriba Derecha) */}
             <div className="ui-top-right">
                 <div className="herramientas-pill">

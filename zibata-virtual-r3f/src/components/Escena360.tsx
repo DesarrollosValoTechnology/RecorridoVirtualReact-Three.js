@@ -11,6 +11,10 @@ import * as THREE from 'three';
 // Un visitante normal nunca los descarga.
 const HotspotEditable = lazy(() => import('./HotspotEditable'));
 const LabelEditable = lazy(() => import('./LabelEditable'));
+const ZonaEditable = lazy(() => import('./ZonaEditable'));
+const ZonaDibujoOverlay = lazy(() => import('./ZonaDibujoOverlay'));
+// Zona (vista normal) SÍ la usan todos los visitantes que pasen por un nodo con zonas.
+import Zona from './Zona';
 
 function SincronizadorMinimapa({ offsetGrados = 0 }: { offsetGrados: number }) {
     const { camera } = useThree();
@@ -45,7 +49,8 @@ export default function Escena360() {
         setIsTransitioning,
         mostrarElementos3D,
         adminPanelActivo,
-        capturaAbierta
+        capturaAbierta,
+        zonasActivas
     } = useTourStore();
 
     const infoNodo = nodos[nodoActual];
@@ -81,6 +86,18 @@ export default function Escena360() {
                     ? <LabelEditable key={`edit-lbl-${label.id || index}`} datos={label} />
                     : <Label key={`label-${label.id || index}`} datos={label} />
             ))}
+
+            {/* ZONAS: regiones (polígonos) clicables sobre la esfera. En modo admin siempre
+                se ven (para poder editarlas); para el visitante empiezan apagadas y se
+                activan con el botón "Activar Zonas" del overlay. */}
+            {mostrarElementosInteractivos && infoNodo.zonas?.map((zona: any, index: number) => {
+                if (adminPanelActivo === 'editorZonas') {
+                    return <ZonaEditable key={`edit-zn-${zona.id || index}`} datos={zona} />;
+                }
+                if (!zonasActivas) return null;
+                return <Zona key={`zona-${zona.id || index}`} datos={zona} />;
+            })}
+            {adminPanelActivo === 'editorZonas' && <ZonaDibujoOverlay />}
         </group>
     );
 }
