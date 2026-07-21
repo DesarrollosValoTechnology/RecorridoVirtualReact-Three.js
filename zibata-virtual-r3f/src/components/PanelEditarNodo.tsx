@@ -3,9 +3,10 @@ import type { CSSProperties, ChangeEvent } from 'react';
 import { useTourStore } from '../store/useTourStore';
 import { supabase } from '../supabase/client';
 import { convertirAWebP, generarVersionBlur } from '../utils/imagenAWebp';
+import { TIPOS_HOTSPOT } from './Hotspot';
 
 export default function PanelEditarNodo() {
-    const { nodos, nodoActual, actualizarNodoActual, setAdminPanelActivo, cargarNodos, borrarNodoActual } = useTourStore();
+    const { nodos, nodoActual, actualizarNodoActual, actualizarTipoIconoNodo, setAdminPanelActivo, cargarNodos, borrarNodoActual } = useTourStore();
     const info = nodos[nodoActual];
 
     const [datos, setDatos] = useState({
@@ -155,6 +156,17 @@ export default function PanelEditarNodo() {
 
             <label style={labelStyle}>TÍTULO PÚBLICO</label>
             <input name="titulo" value={datos.titulo} style={inputPremiumStyle} onChange={handleChange} onBlur={() => actualizarNodoActual({ titulo: datos.titulo })} />
+
+            <label style={labelStyle}>TIPO DE ÍCONO (mapa satelital y hotspots que llegan aquí)</label>
+            <select
+                value={info?.tipoIcono || 'flechas'}
+                style={inputPremiumStyle}
+                onChange={(e) => actualizarTipoIconoNodo(nodoActual, e.target.value)}
+            >
+                {TIPOS_HOTSPOT.map((t) => (
+                    <option key={t.key} value={t.key} style={{ color: 'black' }}>{t.label}</option>
+                ))}
+            </select>
 
             <div style={{ display: 'flex', gap: '10px' }}>
                 <div style={{ flex: 1 }}><label style={labelStyle}>POS. X (%)</label><input type="number" name="mapa_x" value={datos.mapa_x} style={inputPremiumStyle} onChange={handleChange} /></div>

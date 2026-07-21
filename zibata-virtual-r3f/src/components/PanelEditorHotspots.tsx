@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import { useEffect, useState } from 'react';
 import { useTourStore } from '../store/useTourStore';
+import { SVG_URLS } from './Hotspot';
 
 export default function PanelEditorHotspots() {
     const {
@@ -71,27 +72,26 @@ export default function PanelEditorHotspots() {
                         <p style={{ margin: '0 0 10px 0', fontSize: '12px', color: '#4a90e2', fontWeight: 'bold' }}>EDITANDO HOTSPOT SELECCIONADO</p>
                         
                         <label style={{ display: 'block', fontSize: '10px', color: '#ccc', marginBottom: '5px' }}>NODO DESTINO (¿A dónde viaja?)</label>
-                        <select 
-                            style={{ ...inputPremiumStyle, marginBottom: '10px' }}
-                            value={hotspotActivo.destino}
-                            onChange={(e) => actualizarPropiedadesHotspot(hotspotActivo.id, e.target.value, hotspotActivo.tipo)}
-                        >
-                            {opcionesDestino.map((opc) => (
-                                <option key={opc.id} value={opc.id} style={{ color: 'black' }}>{opc.titulo}</option>
-                            ))}
-                        </select>
-
-                        <label style={{ display: 'block', fontSize: '10px', color: '#ccc', marginBottom: '5px' }}>TIPO DE ÍCONO</label>
-                        <select 
-                            style={inputPremiumStyle}
-                            value={hotspotActivo.tipo}
-                            onChange={(e) => actualizarPropiedadesHotspot(hotspotActivo.id, hotspotActivo.destino, e.target.value)}
-                        >
-                            <option value="pasos" style={{ color: 'black' }}>👣 Pasos</option>
-                            <option value="drone" style={{ color: 'black' }}>🚁 Drone (Aéreo)</option>
-                            <option value="casa" style={{ color: 'black' }}>🏠 Casa / Edificio</option>
-                            <option value="info" style={{ color: 'black' }}>ℹ️ Información</option>
-                        </select>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <img
+                                src={SVG_URLS[nodos[hotspotActivo.destino]?.tipoIcono] || SVG_URLS.dron}
+                                alt=""
+                                title="Ícono heredado del tipo del nodo destino (se edita desde ese nodo, no aquí)"
+                                style={{ width: '28px', height: '28px', flexShrink: 0 }}
+                            />
+                            <select
+                                style={{ ...inputPremiumStyle, flex: 1 }}
+                                value={hotspotActivo.destino}
+                                onChange={(e) => actualizarPropiedadesHotspot(hotspotActivo.id, e.target.value)}
+                            >
+                                {opcionesDestino.map((opc) => (
+                                    <option key={opc.id} value={opc.id} style={{ color: 'black' }}>{opc.titulo}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <p style={{ fontSize: '10px', color: '#777', margin: '5px 0 0' }}>
+                            El ícono se hereda del tipo del nodo destino — para cambiarlo, edítalo desde "Configuración" en ese nodo.
+                        </p>
 
                         <label style={{ display: 'block', fontSize: '10px', color: '#ccc', marginBottom: '5px', marginTop: '10px' }}>TEXTO (opcional)</label>
                         <input

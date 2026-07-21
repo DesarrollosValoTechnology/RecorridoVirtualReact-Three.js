@@ -167,9 +167,10 @@ canvas {
     align-items: center;
 }
 
-/* Botón "más opciones" que colapsa la barra de herramientas: solo existe en móvil */
+/* Botón "más opciones" que colapsa la barra de herramientas: solo existe en móvil.
+   !important porque .btn-icon (misma clase compartida) trae display:flex !important. */
 .btn-herramientas-toggle {
-    display: none;
+    display: none !important;
 }
 
 /* Embebido en iframe (ej. kiosco de ventas): dejamos libre la franja superior para la barra
@@ -330,9 +331,10 @@ body.en-iframe #btn-activar-zonas {
     gap: 12px;
 }
 
-/* Botón que colapsa la barra de redes sociales: solo existe en móvil */
+/* Botón que colapsa la barra de redes sociales: solo existe en móvil.
+   !important porque .btn-icon (misma clase compartida) trae display:flex !important. */
 .btn-social-toggle {
-    display: none;
+    display: none !important;
 }
 
 /* ==========================================
@@ -683,6 +685,15 @@ button,
     .btn-herramientas-toggle {
         display: flex !important;
         order: 3;
+        justify-content: center;
+        align-items: center;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        background: var(--panel-bg) !important;
+        backdrop-filter: var(--panel-blur);
+        border: var(--panel-borde) !important;
+        border-radius: 50%;
     }
 
     /* El botón contacto arriba */
@@ -867,34 +878,6 @@ button,
     letter-spacing: 1px;
 }
 
-/* ==========================================
-   12. PINES DEL MAPA (GLOW Y RADAR)
-   ========================================== */
-.icon-mapa {
-    position: absolute;
-    width: 32px;
-    height: 32px;
-    transform: translate(-50%, -50%);
-    pointer-events: auto;
-    cursor: pointer;
-    z-index: 2001;
-    transition: transform 0.2s ease;
-}
-
-.icon-mapa svg {
-    width: 100%; height: 100%; display: block;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-}
-
-.icon-mapa.active {
-    filter: drop-shadow(0px 0px 8px var(--zibata-verde));
-    transform: translate(-50%, -50%) scale(1.2);
-}
-
-.icon-mapa.active svg circle:first-child {
-    fill: var(--zibata-verde) !important;
-}
-
 /* --- 13. CONTENEDORES DE MAPA --- */
 .contenedor-mapa {
     position: relative;
@@ -922,24 +905,6 @@ button,
 .modo-panel {
     width: 100%;
     height: 100%;
-}
-
-/* --- CAPAS DEL LIENZO --- */
-.lienzo-transformable {
-    position: absolute;
-    width: 300%; 
-    height: 300%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.imagen-plano {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    user-select: none;
-    -webkit-user-drag: none;
 }
 
 /* --- CURSORES Y MARCADORES --- */

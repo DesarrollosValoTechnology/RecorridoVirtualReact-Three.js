@@ -50,6 +50,7 @@ export default function PantallaCarga() {
             >
                 <div className="spinner-elegante"></div>
                 <p className="texto-carga">Preparando tu experiencia</p>
+                <p className="texto-wifi">Se recomienda el uso de redes Wi-Fi para una mejor experiencia</p>
             </div>
         </div>
     );

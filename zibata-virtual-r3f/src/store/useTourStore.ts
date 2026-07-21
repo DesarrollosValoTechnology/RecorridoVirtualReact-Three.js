@@ -10,6 +10,12 @@ const getInitialNode = () => {
 
 // Categoría de las tomas aéreas de dron (debe coincidir con el valor guardado en Supabase)
 export const CATEGORIA_VISTA_AEREA = 'Exteriores Zibatá';
+// Nivel más alto de la jerarquía (Zibatá completo, un único nodo): por encima de él
+// no hay nada a lo que "volver", así que el botón de vista aérea no debe aparecer ahí.
+export const CATEGORIA_ZIBATA = 'Zibatá';
+// Id del único nodo de nivel "Zibatá" — destino al que sube el botón "Volver a Vista
+// Aérea" cuando se pulsa desde un nodo de nivel "Exteriores Zibatá".
+export const NODO_ZIBATA_ID = 'zibata';
 
 interface TourState {
     nodoActual: string;
@@ -56,7 +62,8 @@ interface TourState {
     crearNuevoHotspot: (nodoId?: string) => Promise<void>;
     hotspotSeleccionadoId: string | null;
     setHotspotSeleccionadoId: (id: string | null) => void;
-    actualizarPropiedadesHotspot: (id: string, destino: string, tipo: string) => Promise<void>;
+    actualizarPropiedadesHotspot: (id: string, destino: string) => Promise<void>;
+    actualizarTipoIconoNodo: (id: string, tipo: string) => Promise<void>;
     actualizarTextoHotspot: (hotspotId: string, texto: string) => Promise<void>;
     borrarHotspot: (id: string) => Promise<void>;
     labelSeleccionadoId: string | null;
@@ -140,6 +147,7 @@ export const useTourStore = create<TourState>((set, get) => ({
                 mapaX:        nodoDB.mapa_x,
                 mapaY:        nodoDB.mapa_y,
                 norteOffset:  nodoDB.norte_offset,
+                tipoIcono:    nodoDB.tipo || 'flechas',
                 ui: {
                     titulo:    nodoDB.titulo,
                     categoria: nodoDB.categoria || 'General',       // ← columna nueva
@@ -148,7 +156,6 @@ export const useTourStore = create<TourState>((set, get) => ({
                 hotspots: nodoDB.hotspots.map((h: any) => ({
                     id:       h.id,
                     destino:  h.nodo_destino_id,
-                    tipo:     h.tipo,
                     posicion: { x: h.x, y: h.y, z: h.z },
                 })),
                 // ✅ CÓDIGO NUEVO (Pon este)
@@ -216,11 +223,11 @@ export const useTourStore = create<TourState>((set, get) => ({
         const nodoOrigen = nodoId || get().nodoActual;
         const { error } = await supabase
             .from('hotspots')
-            .insert([{ nodo_origen_id: nodoOrigen, nodo_destino_id: nodoOrigen, x: 0, y: 0, z: -50, tipo: 'pasos' }]);
+            .insert([{ nodo_origen_id: nodoOrigen, nodo_destino_id: nodoOrigen, x: 0, y: 0, z: -50, tipo: 'flechas' }]);
         if (!error) await get().cargarNodos();
     },
 
-    actualizarPropiedadesHotspot: async (id, destino, tipo) => {
+    actualizarPropiedadesHotspot: async (id, destino) => {
         // Optimista local: buscamos el hotspot en TODOS los nodos (puede no ser el activo, ej. desde el Explorador)
         const nodosActuales = { ...get().nodos };
         for (const nId of Object.keys(nodosActuales)) {
@@ -228,15 +235,28 @@ export const useTourStore = create<TourState>((set, get) => ({
             if (nodo.hotspots?.some((h: any) => h.id === id)) {
                 nodosActuales[nId] = {
                     ...nodo,
-                    hotspots: nodo.hotspots.map((h: any) => (h.id === id ? { ...h, destino, tipo } : h)),
+                    hotspots: nodo.hotspots.map((h: any) => (h.id === id ? { ...h, destino } : h)),
                 };
                 break;
             }
         }
         set({ nodos: nodosActuales });
         // Nube
-        const { error } = await supabase.from('hotspots').update({ nodo_destino_id: destino, tipo }).eq('id', id);
+        const { error } = await supabase.from('hotspots').update({ nodo_destino_id: destino }).eq('id', id);
         if (error) console.error("Error al actualizar hotspot:", error);
+    },
+
+    // El ícono de un hotspot ya no se elige a mano: se hereda del tipo del nodo destino
+    // (ver tipoIcono más abajo). Esta acción es la que fija ese tipo, una vez por nodo,
+    // sin importar cuántos hotspots de otros nodos apunten hacia él.
+    actualizarTipoIconoNodo: async (id, tipo) => {
+        const nodosActuales = { ...get().nodos };
+        if (nodosActuales[id]) {
+            nodosActuales[id] = { ...nodosActuales[id], tipoIcono: tipo };
+            set({ nodos: nodosActuales });
+        }
+        const { error } = await supabase.from('nodos').update({ tipo }).eq('id', id);
+        if (error) console.error("Error al actualizar el tipo de ícono del nodo:", error);
     },
 
     borrarHotspot: async (id) => {

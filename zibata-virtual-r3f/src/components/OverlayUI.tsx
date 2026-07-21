@@ -1,6 +1,6 @@
 // src/components/OverlayUI.tsx
 import { useRef, useState } from 'react';
-import { useTourStore, CATEGORIA_VISTA_AEREA } from '../store/useTourStore';
+import { useTourStore, CATEGORIA_VISTA_AEREA, CATEGORIA_ZIBATA, NODO_ZIBATA_ID } from '../store/useTourStore';
 import SocialBar from './SocialBar';
 import { diccionario } from '../data/diccionario';
 import MapaBase from './MapaBase';
@@ -44,6 +44,10 @@ export default function OverlayUI({ esAppEscritorio, isAdmin, onVolverAlMenu }: 
     if (!infoNodo || (store.isTransitioning && !store.mostrarElementos3D) || store.capturaAbierta) return null;
 
     const esVistaAerea = infoNodo.ui?.categoria === CATEGORIA_VISTA_AEREA;
+    const esZibata      = infoNodo.ui?.categoria === CATEGORIA_ZIBATA;
+    // No asumimos que el nodo de nivel "Zibatá" tenga por id literal 'zibata': lo buscamos
+    // por categoría (con ese id como último respaldo, por si aún no cargaron los nodos).
+    const nodoZibataId = Object.keys(nodos).find((id) => nodos[id]?.ui?.categoria === CATEGORIA_ZIBATA) || NODO_ZIBATA_ID;
 
     return (
         <div id="ui-overlay">
@@ -96,11 +100,14 @@ export default function OverlayUI({ esAppEscritorio, isAdmin, onVolverAlMenu }: 
                 <div id="info-fecha">{t["UI_FECHA_FOTOS"]}</div>
             </div>
 
-            {/* 1.5 VOLVER A VISTA AÉREA (solo si NO estamos ya en una toma aérea) */}
-            {!esVistaAerea && (
+            {/* 1.5 VOLVER A VISTA AÉREA (jerarquía de 3 niveles: Zibatá → Exteriores Zibatá →
+                cualquier otro nodo. En "Zibatá" no hay nada más arriba, así que no se muestra.
+                Desde "Exteriores Zibatá" sube al nodo Zibatá; desde cualquier otro nodo, sube
+                al último nodo "Exteriores Zibatá" visitado. */}
+            {!esZibata && (
                 <button
                     id="btn-volver-aerea"
-                    onClick={() => store.cargarNodo(store.ultimoNodoAereo)}
+                    onClick={() => store.cargarNodo(esVistaAerea ? nodoZibataId : store.ultimoNodoAereo)}
                     style={{ opacity: store.menuAbierto ? 0 : 1, pointerEvents: store.menuAbierto ? 'none' : 'auto' }}
                     title="Volver a la vista aérea de dron"
                 >
@@ -120,12 +127,12 @@ export default function OverlayUI({ esAppEscritorio, isAdmin, onVolverAlMenu }: 
                     id="btn-activar-zonas"
                     onClick={() => store.toggleZonasActivas()}
                     style={{ opacity: store.menuAbierto ? 0 : 1, pointerEvents: store.menuAbierto ? 'none' : 'auto' }}
-                    title={store.zonasActivas ? 'Ocultar las zonas interactivas' : 'Ver y viajar por zonas de este mapa'}
+                    title={store.zonasActivas ? 'Ocultar zonas y volver a la experiencia normal' : 'Ver y viajar por zonas de este mapa'}
                 >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M2 12h20"/><path d="M12 2v20"/><path d="M12 2 2 7l10 5 10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/>
                     </svg>
-                    <span>{store.zonasActivas ? 'Ocultar Zonas' : 'Activar Zonas'}</span>
+                    <span>{store.zonasActivas ? 'Ocultar Zonas' : 'Iniciar experiencia'}</span>
                 </button>
             )}
 

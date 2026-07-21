@@ -1,5 +1,6 @@
 // src/utils/mapaRadar.ts
 import { useTourStore } from '../store/useTourStore';
+import { SVG_URLS } from '../components/Hotspot';
 
 let mapaSat: any = null;
 let mapProjectionOverlay: any = null;
@@ -28,13 +29,6 @@ function cargarGoogleMaps(): Promise<void> {
 
     return promesaGoogleMaps;
 }
-
-const ICONOS: Record<string, string> = {
-    drone: `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="11.5" fill="black" stroke="white" stroke-width="0.5"/><g transform="translate(4.8, 4.8) scale(0.6)"><path d="M10 10 7 7"/><path d="m10 14-3 3"/><path d="m14 10 3-3"/><path d="m14 14 3 3"/><path d="M14.205 4.139a4 4 0 1 1 5.439 5.863"/><path d="M19.637 14a4 4 0 1 1-5.432 5.868"/><path d="M4.367 10a4 4 0 1 1 5.438-5.862"/><path d="M9.795 19.862a4 4 0 1 1-5.429-5.873"/><rect x="10" y="8" width="4" height="8" rx="1"/></g></svg>`,
-    casa: `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="11.5" fill="black" stroke="white" stroke-width="0.5"/><g transform="translate(5, 5) scale(0.6)"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></g></svg>`,
-    pasos: `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="11.5" fill="black" stroke="white" stroke-width="0.5"/><g transform="translate(4.8, 4.8) scale(0.6)"><path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z"/><path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z"/><path d="M16 17h4"/><path d="M4 13h4"/></g></svg>`,
-    info: `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="11.5" fill="black" stroke="white" stroke-width="0.5"/><g transform="translate(4.8, 4.8) scale(0.6)"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></g></svg>`
-};
 
 export function abrirMapaInteractivo() {
     // Sincronizamos coordenadas con el nodo actual antes de abrir
@@ -128,8 +122,15 @@ export function actualizarMinimapaFrame(camera: any, controls: any, nodoActual: 
     if (!controls || typeof controls.getAzimuthalAngle !== 'function') return;
 
     // 1. DIBUJAR ICONOS DINÁMICOS
-    // Si la cantidad de iconos no coincide con la base de datos, refrescamos el contenedor
-    if (contenedorIconos.children.length !== Object.keys(nodosDB).length) {
+    // Si la cantidad de iconos no coincide con los nodos que sí tienen lat/lng (los únicos
+    // que realmente se dibujan más abajo), refrescamos el contenedor.
+    // 🚨 Comparar contra Object.keys(nodosDB).length (TODOS los nodos, tengan o no
+    // coordenadas) hacía que esta condición fuera siempre verdadera cuando hay nodos sin
+    // lat/lng — eso recreaba los íconos en CADA frame (60/seg), reseteando la animación
+    // de pulso a cada rato y arrancando los <div> de abajo del cursor antes de que el
+    // evento "click" llegara a dispararse.
+    const nodosConCoordenadas = Object.values(nodosDB).filter((info: any) => info.lat && info.lng).length;
+    if (contenedorIconos.children.length !== nodosConCoordenadas) {
         contenedorIconos.innerHTML = '';
         
         // Inyectamos CSS si no existe
@@ -137,19 +138,24 @@ export function actualizarMinimapaFrame(camera: any, controls: any, nodoActual: 
             const style = document.createElement('style');
             style.id = 'radar-css-fix';
             style.innerHTML = `
-                .icon-mapa { 
-                    position: absolute; transform: translate(-50%, -50%); cursor: pointer; 
+                .icon-mapa {
+                    position: absolute; transform: translate(-50%, -50%); cursor: pointer;
                     z-index: 10; transition: transform 0.2s; width: 32px; height: 32px; border-radius: 50%;
+                    pointer-events: auto;
                 }
                 .icon-mapa:hover { transform: translate(-50%, -50%) scale(1.15); z-index: 20; }
-                .icon-mapa.active { z-index: 30; }
-                .icon-mapa.active svg circle:first-child { fill: #5cb82a !important; stroke: #fff !important; }
+                .icon-mapa.active {
+                    z-index: 30;
+                    transform: translate(-50%, -50%) scale(1.25);
+                    outline: 3px solid #5cb82a;
+                    box-shadow: 0 0 14px 3px rgba(92, 184, 42, 0.85), 0 2px 6px rgba(0,0,0,0.5);
+                }
                 .icon-mapa::before, .icon-mapa::after {
                     content: ''; position: absolute; top: 50%; left: 50%;
                     transform: translate(-50%, -50%); border-radius: 50%;
-                    border: solid rgba(255, 255, 255, 0.7); 
+                    border: solid rgba(0, 255, 136, 0.8);
                     animation: radar-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
-                    pointer-events: none; z-index: -1; box-sizing: content-box;
+                    pointer-events: none; z-index: 1; box-sizing: content-box;
                 }
                 .icon-mapa::after { animation-delay: 1s; }
                 @keyframes radar-ping {
@@ -164,9 +170,10 @@ export function actualizarMinimapaFrame(camera: any, controls: any, nodoActual: 
             if (info.lat && info.lng) {
                 const divIcono = document.createElement('div');
                 divIcono.id = `map-icon-${id}`;
-                const tipo = info.hotspots?.[0]?.tipo || 'pasos';
+                const tipo = info.tipoIcono || 'dron';
                 divIcono.className = `icon-mapa ${tipo}`;
-                divIcono.innerHTML = ICONOS[tipo] || ICONOS['pasos'];
+                divIcono.dataset.tipo = tipo;
+                divIcono.innerHTML = `<img src="${SVG_URLS[tipo] || SVG_URLS.dron}" alt="${tipo}" style="width:100%;height:100%;border-radius:50%;" />`;
 
                 // ✅ PON ESTE BLOQUE NUEVO:
                 divIcono.addEventListener('pointerenter', (e) => {
@@ -199,17 +206,27 @@ export function actualizarMinimapaFrame(camera: any, controls: any, nodoActual: 
         }
     }
 
-    // 2. SINCRONIZAR POSICIONES GEOGRÁFICAS
+    // 2. SINCRONIZAR POSICIONES GEOGRÁFICAS (y el ícono, si cambió el tipo del nodo desde el admin)
     for (const [id, info] of Object.entries(nodosDB) as [string, any][]) {
-        const el = document.getElementById(`map-icon-${id}`);
+        const el = document.getElementById(`map-icon-${id}`) as HTMLDivElement | null;
         if (el && info.lat && info.lng && mapProjectionOverlay) {
             const latLng = new (window as any).google.maps.LatLng(Number(info.lat), Number(info.lng));
             const pos = mapProjectionOverlay.fromLatLngToContainerPixel(latLng);
-            
+
             if (!pos) continue;
             el.style.left = `${pos.x}px`;
             el.style.top = `${pos.y}px`;
-            
+
+            const tipoActual = info.tipoIcono || 'dron';
+            if (el.dataset.tipo !== tipoActual) {
+                el.dataset.tipo = tipoActual;
+                const img = el.querySelector('img');
+                if (img) {
+                    img.src = SVG_URLS[tipoActual] || SVG_URLS.dron;
+                    img.alt = tipoActual;
+                }
+            }
+
             if (id === nodoActual) {
                 el.classList.add('active');
                 svgParent.style.left = `${pos.x}px`; 

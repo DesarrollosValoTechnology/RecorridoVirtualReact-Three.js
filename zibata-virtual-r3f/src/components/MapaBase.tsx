@@ -1,15 +1,24 @@
 // src/components/MapaBase.tsx
-import { useState, useRef, useEffect } from 'react';
-import type { MouseEvent, TouchEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import OpenSeadragon from 'openseadragon';
 import { useTourStore } from '../store/useTourStore';
 
 interface Props {
     esMinimapa?: boolean;
 }
 
-const ROTACION_IMAGEN_MANUAL = -58;
-// El tamaño "virtual" de nuestro plano. ¡No lo cambies!
-const ANCHO_PLANO = 3000; 
+// 🚨 Rotación de alineación del plano nuevo: hay que ajustarla a ojo comparando
+// contra el norte real del recorrido (el valor viejo, -58, era para el plano anterior).
+const ROTACION_IMAGEN_MANUAL = 0;
+
+// Zoom fijo del minimapa (ventana chica, centrada en el nodo): más alto = ves menos
+// área alrededor del punto. Ajustar a ojo.
+const ZOOM_MINIMAPA = 4.5;
+// Multiplicador sobre el "zoom que muestra el plano completo" para el panel grande
+// (mismo espíritu del "+0.08" que tenía el código viejo, para matar bordes vacíos).
+const ZOOM_PANEL_FACTOR = 1.15;
+
+const DZI_URL = '/Assets/mapa-dzi/plano.dzi';
 
 export default function MapaBase({ esMinimapa = false }: Props) {
     const nodoActual = useTourStore((state) => state.nodoActual);
@@ -19,23 +28,9 @@ export default function MapaBase({ esMinimapa = false }: Props) {
     const posX = infoNodo?.mapaX ?? 50;
     const posY = infoNodo?.mapaY ?? 50;
 
-    // Calculamos la escala inicial para que el plano de 3000px quepa en la pantalla
-    const calcularEscalaBase = () => {
-        if (esMinimapa) return 0.25;
-        // Asumimos que el panel ocupa un 80% del alto de la ventana
-        const alturaPanel = window.innerHeight * 0.8; 
-        // Dividimos la altura del panel entre el alto aprox de la imagen (3000px)
-        // Le sumamos un "plus" (ej. 0.05) para hacer el ligero zoom que pediste y matar bordes blancos.
-        return (alturaPanel / ANCHO_PLANO) + 0.08; 
-    };
-
-    const [escalaBase, setEscalaBase] = useState(calcularEscalaBase());
-    const [escala, setEscala] = useState(escalaBase);
-    const [offset, setOffset] = useState({ x: 0, y: 0 });
-    const [arrastrando, setArrastrando] = useState(false);
-
-    const inicioDrag = useRef({ x: 0, y: 0 });
-    const distanciaInicialRef = useRef<number | null>(null);
+    const elementoRef = useRef<HTMLDivElement>(null);
+    const viewerRef = useRef<OpenSeadragon.Viewer | null>(null);
+    const marcadorElRef = useRef<HTMLDivElement | null>(null);
 
     // En móvil el minimapa vive chico para no estorbar; al tocarlo se expande al
     // tamaño normal unos segundos y luego se vuelve a encoger solo.
@@ -55,127 +50,113 @@ export default function MapaBase({ esMinimapa = false }: Props) {
         };
     }, []);
 
-    // Recalcular escala si cambian el tamaño de la ventana
+    // Crea el visor una sola vez (por instancia del componente: minimapa y panel
+    // grande son montajes separados, cada uno con su propio OpenSeadragon.Viewer).
     useEffect(() => {
-        const handleResize = () => {
-            const nuevaEscalaBase = calcularEscalaBase();
-            setEscalaBase(nuevaEscalaBase);
-            if (!esMinimapa) setEscala(nuevaEscalaBase);
+        if (!elementoRef.current) return;
+
+        const viewer = OpenSeadragon({
+            element: elementoRef.current,
+            tileSources: DZI_URL,
+            showNavigationControl: false,
+            showZoomControl: false,
+            showHomeControl: false,
+            showFullPageControl: false,
+            gestureSettingsMouse: { clickToZoom: false },
+            mouseNavEnabled: !esMinimapa,
+            panHorizontal: !esMinimapa,
+            panVertical: !esMinimapa,
+            minZoomLevel: esMinimapa ? ZOOM_MINIMAPA : 1,
+            maxZoomLevel: 12,
+            visibilityRatio: 1,
+            constrainDuringPan: !esMinimapa,
+            zoomPerScroll: 1.4,
+            animationTime: 0.6,
+            springStiffness: 8,
+            autoResize: true,
+        });
+
+        viewerRef.current = viewer;
+        if (esMinimapa) viewer.viewport.setRotation(ROTACION_IMAGEN_MANUAL, true);
+
+        return () => {
+            viewer.destroy();
+            viewerRef.current = null;
+            marcadorElRef.current = null;
         };
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [esMinimapa]);
 
-    // Resetear al cambiar de nodo
+    // Estilo GTA: Escena360.tsx (SincronizadorMinimapa) escribe cada frame hacia dónde
+    // mira la cámara en la variable CSS --rotacion-gta (radianes). Acá la leemos con
+    // el mismo ritmo y la aplicamos al visor, sumándole el offset manual de alineación.
     useEffect(() => {
-        setOffset({ x: 0, y: 0 });
-        if (!esMinimapa) setEscala(escalaBase);
-    }, [nodoActual, esMinimapa, escalaBase]);
+        if (!esMinimapa) return;
+        let frameId: number;
+        let ultimoGrados: number | null = null;
 
-    const iniciarArrastreMouse = (e: MouseEvent) => {
-        if (esMinimapa) return;
-        setArrastrando(true);
-        inicioDrag.current = { x: e.clientX - offset.x, y: e.clientY - offset.y };
-    };
+        const sincronizar = () => {
+            const viewer = viewerRef.current;
+            if (viewer) {
+                const crudo = getComputedStyle(document.documentElement).getPropertyValue('--rotacion-gta');
+                const radianes = parseFloat(crudo) || 0;
+                const grados = radianes * (180 / Math.PI) + ROTACION_IMAGEN_MANUAL;
+                if (ultimoGrados === null || Math.abs(grados - ultimoGrados) > 0.05) {
+                    viewer.viewport.setRotation(grados, true);
+                    ultimoGrados = grados;
+                }
+            }
+            frameId = requestAnimationFrame(sincronizar);
+        };
+        frameId = requestAnimationFrame(sincronizar);
 
-    const arrastrarMouse = (e: MouseEvent) => {
-        if (!arrastrando || esMinimapa) return;
-        setOffset({ x: e.clientX - inicioDrag.current.x, y: e.clientY - inicioDrag.current.y });
-    };
+        return () => cancelAnimationFrame(frameId);
+    }, [esMinimapa]);
 
-    const manejarTouchStart = (e: TouchEvent) => {
-        if (esMinimapa) return;
-        if (e.touches.length === 1) {
-            setArrastrando(true);
-            const touch = e.touches[0];
-            inicioDrag.current = { x: touch.clientX - offset.x, y: touch.clientY - offset.y };
-        } else if (e.touches.length === 2) {
-            const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-            distanciaInicialRef.current = d;
-        }
-    };
+    // Centra/zoomea sobre la posición del nodo actual (y coloca el marcador verde
+    // en modo panel) cada vez que cambia el nodo. Si el visor todavía no terminó de
+    // abrir el .dzi, espera a su evento "open" antes de intentarlo.
+    useEffect(() => {
+        const viewer = viewerRef.current;
+        if (!viewer) return;
 
-    const manejarTouchMove = (e: TouchEvent) => {
-        if (esMinimapa) return;
-        if (e.touches.length === 1 && arrastrando) {
-            const touch = e.touches[0];
-            setOffset({ x: touch.clientX - inicioDrag.current.x, y: touch.clientY - inicioDrag.current.y });
-        } else if (e.touches.length === 2 && distanciaInicialRef.current) {
-            const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-            const factor = d / distanciaInicialRef.current;
-            distanciaInicialRef.current = d;
-            setEscala(prev => Math.min(Math.max(escalaBase, prev * factor), 4));
-        }
-    };
+        const centrarEnNodo = () => {
+            const imagen = viewer.world.getItemAt(0);
+            if (!imagen) return;
+
+            const tamano = imagen.getContentSize();
+            const puntoImagen = new OpenSeadragon.Point((posX / 100) * tamano.x, (posY / 100) * tamano.y);
+            const puntoViewport = imagen.imageToViewportCoordinates(puntoImagen);
+
+            if (esMinimapa) {
+                viewer.viewport.zoomTo(ZOOM_MINIMAPA, undefined, true);
+                viewer.viewport.panTo(puntoViewport, true);
+            } else {
+                const zoomInicial = viewer.viewport.getHomeZoom() * ZOOM_PANEL_FACTOR;
+                viewer.viewport.zoomTo(zoomInicial, undefined, true);
+                viewer.viewport.panTo(puntoViewport, true);
+
+                if (marcadorElRef.current) viewer.removeOverlay(marcadorElRef.current);
+                const el = document.createElement('div');
+                el.className = 'marcador-panel-grande';
+                el.innerHTML = '<div class="pulso-verde"></div>';
+                marcadorElRef.current = el;
+                viewer.addOverlay(el, puntoViewport, OpenSeadragon.Placement.CENTER);
+            }
+        };
+
+        if (viewer.world.getItemCount() > 0) centrarEnNodo();
+        else viewer.addOnceHandler('open', centrarEnNodo);
+    }, [posX, posY, esMinimapa, nodoActual]);
 
     return (
         <div
             className={`contenedor-mapa ${esMinimapa ? 'modo-minimapa' : 'modo-panel'} ${expandidoMovil ? 'minimapa-expandido' : ''}`}
             onClick={alTocarMinimapa}
-            onWheel={(e) => {
-                if (esMinimapa) return;
-                setEscala(prev => Math.min(Math.max(escalaBase, prev * (e.deltaY > 0 ? 0.9 : 1.1)), 4));
-            }}
-            onMouseDown={iniciarArrastreMouse}
-            onMouseMove={arrastrarMouse}
-            onMouseUp={() => setArrastrando(false)}
-            onMouseLeave={() => setArrastrando(false)}
-            onTouchStart={manejarTouchStart}
-            onTouchMove={manejarTouchMove}
-            onTouchEnd={() => { setArrastrando(false); distanciaInicialRef.current = null; }}
-            style={{
-                cursor: arrastrando ? 'grabbing' : (esMinimapa ? 'default' : 'grab'),
-                touchAction: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'hidden'
-            }}
         >
-            {/* CAPA DE ZOOM (Aplica la escala dinámica) */}
-            <div style={{
-                width: '100%', height: '100%',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transform: `scale(${escala})`,
-                transition: arrastrando ? 'none' : 'transform 0.2s ease-out',
-            }}>
-                {/* CAPA DE POSICIÓN Y ROTACIÓN (Mantiene el tamaño virtual de 3000px) */}
-                <div
-                    className="lienzo-transformable"
-                    style={{
-                        position: 'absolute',
-                        width: `${ANCHO_PLANO}px`,
-                        height: 'auto',
-                        // La magia original: centra el punto X,Y en la pantalla
-                        transform: `translate(calc(50% - ${posX}% + ${offset.x / escala}px), calc(50% - ${posY}% + ${offset.y / escala}px))
-                                    ${esMinimapa ? `rotate(calc(var(--rotacion-gta, 0rad) + ${ROTACION_IMAGEN_MANUAL}deg))` : 'rotate(0rad)'}`,
-                        transformOrigin: `${posX}% ${posY}%`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: arrastrando ? 'none' : 'transform 0.15s linear',
-                    }}
-                >
-                    <img
-                        src="/Assets/zibata_plano.webp"
-                        alt="Plano"
-                        className="imagen-plano"
-                        width={1600}
-                        height={1572}
-                        style={{ width: '100%', height: 'auto', display: 'block' }}
-                        draggable={false}
-                    />
+            <div ref={elementoRef} style={{ width: '100%', height: '100%' }} />
 
-                    {/* CURSOR MODO PANEL (El punto verde) */}
-                    {!esMinimapa && (
-                        <div className="marcador-panel-grande" style={{ position: 'absolute', left: `${posX}%`, top: `${posY}%` }}>
-                            <div className="pulso-verde"></div>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* CURSOR MODO MINIMAPA (La flecha estilo GTA) */}
+            {/* CURSOR MODO MINIMAPA (La flecha estilo GTA, fija en el centro) */}
             {esMinimapa && (
                 <div className="cursor-gta" style={{ zIndex: 1001, position: 'absolute' }}>
                     <svg

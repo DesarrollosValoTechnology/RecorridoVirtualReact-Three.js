@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useTourStore } from '../store/useTourStore';
-
-const ICONOS_TIPO: Record<string, string> = {
-    pasos: '👣', drone: '🚁', casa: '🏠', persona: '🚶', info: 'ℹ️'
-};
+import { TIPOS_HOTSPOT, SVG_URLS } from './Hotspot';
 
 // ==========================================
 // 🎨 SISTEMA DE DISEÑO "RAYCAST PREMIUM"
@@ -77,7 +74,7 @@ export default function AdminExplorador() {
         actualizarPropiedadesHotspot, borrarHotspot, crearNuevoHotspot,
         actualizarPropiedadesLabel, borrarLabel, crearNuevoLabel,
         borrarNodo, generarBlurParaNodo, generarMiniaturaParaNodo, reoptimizarFoto360ParaNodo,
-        marcarNodoPrincipal,
+        marcarNodoPrincipal, actualizarTipoIconoNodo,
     } = useTourStore();
     const [marcandoPrincipalId, setMarcandoPrincipalId] = useState<string | null>(null);
 
@@ -347,6 +344,24 @@ export default function AdminExplorador() {
                                 <button title="Eliminar nodo" onClick={() => handleBorrarNodo(id, info.ui?.titulo || id)} style={{ ...miniBtnStyle, color: '#ff4d4d' }}>🗑</button>
                             </div>
 
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
+                                <img
+                                    src={SVG_URLS[info.tipoIcono] || SVG_URLS.dron}
+                                    alt=""
+                                    style={{ width: '16px', height: '16px', flexShrink: 0 }}
+                                />
+                                <select
+                                    title="Tipo de ícono de este nodo (se usa en el mapa satelital y en los hotspots que apunten aquí)"
+                                    value={info.tipoIcono}
+                                    onChange={(e) => actualizarTipoIconoNodo(id, e.target.value)}
+                                    style={{ ...selectMiniStyle, flex: 1 }}
+                                >
+                                    {TIPOS_HOTSPOT.map((t) => (
+                                        <option key={t.key} value={t.key} style={{ color: 'black' }}>{t.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+
                             {abierto && (
                                 <div style={{ marginTop: '12px', paddingLeft: '10px', borderLeft: '2px solid rgba(255,255,255,0.06)' }}>
                                     <div style={{ fontSize: '10px', color: '#4a90e2', fontWeight: 700, marginBottom: '6px', letterSpacing: '0.5px' }}>
@@ -354,25 +369,20 @@ export default function AdminExplorador() {
                                     </div>
                                     {hotspots.map((h: any) => (
                                         <div key={h.id} style={filaStyle}>
-                                            <span title={h.tipo}>{ICONOS_TIPO[h.tipo] || '📍'}</span>
+                                            <img
+                                                src={SVG_URLS[nodos[h.destino]?.tipoIcono] || SVG_URLS.dron}
+                                                alt=""
+                                                title="Ícono heredado del tipo del nodo destino"
+                                                style={{ width: '16px', height: '16px', flexShrink: 0 }}
+                                            />
                                             <select
                                                 value={h.destino}
-                                                onChange={(e) => actualizarPropiedadesHotspot(h.id, e.target.value, h.tipo)}
+                                                onChange={(e) => actualizarPropiedadesHotspot(h.id, e.target.value)}
                                                 style={selectMiniStyle}
                                             >
                                                 {opcionesDestino.map((opc) => (
                                                     <option key={opc.id} value={opc.id} style={{ color: 'black' }}>{opc.titulo}</option>
                                                 ))}
-                                            </select>
-                                            <select
-                                                value={h.tipo}
-                                                onChange={(e) => actualizarPropiedadesHotspot(h.id, h.destino, e.target.value)}
-                                                style={{ ...selectMiniStyle, flex: '0 0 60px' }}
-                                            >
-                                                <option value="pasos" style={{ color: 'black' }}>👣</option>
-                                                <option value="drone" style={{ color: 'black' }}>🚁</option>
-                                                <option value="casa" style={{ color: 'black' }}>🏠</option>
-                                                <option value="info" style={{ color: 'black' }}>ℹ️</option>
                                             </select>
                                             <button title="Borrar hotspot" onClick={() => borrarHotspot(h.id)} style={{ ...miniBtnStyle, color: '#ff4d4d' }}>🗑</button>
                                         </div>

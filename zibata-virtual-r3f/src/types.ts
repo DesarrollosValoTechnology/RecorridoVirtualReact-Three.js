@@ -1,7 +1,18 @@
 // src/types.ts
 
 export type Idioma = 'es' | 'en';
-export type TipoIcono = 'drone' | 'casa' | 'pasos' | 'persona' | 'info';
+export type TipoIcono =
+    | 'flechas'
+    | 'dron'
+    | 'portico'
+    | 'discovery-center'
+    | 'anahuac'
+    | 'bbva-prox'
+    | 'golf'
+    | 'heb'
+    | 'walmart'
+    | 'parques'
+    | 'plazas-comerciales';
 
 export interface IVector3 {
     x: number;
@@ -18,7 +29,6 @@ export interface IUIInfo {
 export interface IHotspot {
     id: string;          // ✅ Añadido: se usa en HotspotEditable, PanelEditorHotspots, etc.
     destino: string;
-    tipo: TipoIcono;
     posicion: IVector3;
     debug?: boolean;
 }
@@ -42,6 +52,7 @@ export interface IZona {
 
 export interface INodo {
     tipo: 'foto';
+    tipoIcono: TipoIcono;
     archivo: string;
     archivoBlur?: string;
     lat?: number;

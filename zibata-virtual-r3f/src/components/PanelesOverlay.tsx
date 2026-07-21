@@ -24,8 +24,11 @@ export default function PanelesOverlay() {
     }, [store.panelActivo]);
 
     // ✅ Agrupamos por categoría usando los nodos del store
+    // "2DONIVEL" son fotos de acercamiento a las que se llega bajando desde su nodo
+    // padre en la escena 3D — no deben listarse en el menú de Zonas del Recorrido.
     const categorias = Object.entries(nodos).reduce((acc: any, [id, info]) => {
         const cat = info.ui?.categoria || 'General';
+        if (cat.trim().toUpperCase() === '2DONIVEL') return acc;
         if (!acc[cat]) acc[cat] = [];
         acc[cat].push({ id, ...info.ui });
         return acc;
@@ -52,7 +55,7 @@ export default function PanelesOverlay() {
                         {Object.entries(categorias)
                             // 🚨 AQUÍ ESTÁ LA MAGIA DEL ORDENAMIENTO
                             .sort(([catA], [catB]) => {
-                                const ordenDeseado = ["Exteriores Zibatá", "Amenidades", "Parques", "Colegios", "Comercios"];
+                                const ordenDeseado = ["Zibatá","Exteriores Zibatá", "Amenidades", "Parques", "Colegios", "Comercios"];
                                 
                                 let indexA = ordenDeseado.indexOf(catA);
                                 let indexB = ordenDeseado.indexOf(catB);

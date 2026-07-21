@@ -8,11 +8,14 @@ import { SVG_URLS } from './Hotspot';
 
 export default function HotspotEditable({ datos }: { datos: any }) {
     const updatePos = useTourStore(state => state.actualizarPosicionHotspot);
+    const nodos = useTourStore(state => state.nodos);
     const { hotspotSeleccionadoId, setHotspotSeleccionadoId } = useTourStore();
     const esSeleccionado = hotspotSeleccionadoId === datos.id;
 
     const iconoRef = useRef<THREE.Mesh>(null);
-    const iconTex = useTexture(SVG_URLS[datos.tipo] || SVG_URLS.drone);
+    // El ícono del hotspot ya no se elige por hotspot: se hereda del tipo del nodo destino.
+    const tipoIcono = nodos[datos.destino]?.tipoIcono;
+    const iconTex = useTexture(SVG_URLS[tipoIcono] || SVG_URLS.dron);
     iconTex.colorSpace = THREE.SRGBColorSpace;
 
     // Mismo tratamiento visual que el hotspot normal (Hotspot.tsx): pegado a la
