@@ -182,7 +182,7 @@ export default function CapturaFoto() {
                 onClick={cerrar}
                 title="Cerrar"
                 style={{
-                    position: 'absolute', top: '24px', right: '28px',
+                    position: 'absolute',
                     background: 'rgba(0,0,0,0.45)', border: 'none', borderRadius: '50%',
                     width: '44px', height: '44px', color: 'white', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1,
