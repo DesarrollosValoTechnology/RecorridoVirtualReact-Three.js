@@ -245,6 +245,12 @@ body.en-iframe #btn-activar-zonas {
     top: calc(25px + 68px);
 }
 
+/* Botón "Cerrar" del modo captura de foto: mismo trato que los demás controles
+   anclados arriba, para no quedar debajo de la barra flotante del anfitrión. */
+body.en-iframe #btn-cerrar-captura {
+    top: calc(24px + 68px);
+}
+
 .herramientas-pill {
     display: flex;
     gap: 8px;

@@ -178,6 +178,7 @@ export default function CapturaFoto() {
             }}
         >
             <button
+                id="btn-cerrar-captura"
                 onClick={cerrar}
                 title="Cerrar"
                 style={{
