@@ -141,6 +141,17 @@ export default function CapturaFoto() {
 
     const volverATomar = () => setImagenFinal(null);
 
+    // Convierte el data URL (image/png) a Blob de forma síncrona, sin await, para no
+    // perder el "user gesture" que exige navigator.share (un await previo lo invalidaría).
+    const dataURLaBlob = (dataUrl: string): Blob => {
+        const [meta, base64] = dataUrl.split(',');
+        const mime = meta.match(/:(.*?);/)?.[1] ?? 'image/png';
+        const binario = atob(base64);
+        const bytes = new Uint8Array(binario.length);
+        for (let i = 0; i < binario.length; i++) bytes[i] = binario.charCodeAt(i);
+        return new Blob([bytes], { type: mime });
+    };
+
     const tomarFoto = async () => {
         const frame = capturarFrameActual();
         if (!frame) return;
@@ -158,12 +169,36 @@ export default function CapturaFoto() {
         }
     };
 
-    const descargar = () => {
+    const descargar = async () => {
         if (!imagenFinal) return;
+        const nombre = `zibata-tour-${Date.now()}.png`;
+        const blob = dataURLaBlob(imagenFinal);
+        const archivo = new File([blob], nombre, { type: 'image/png' });
+
+        // 1) Compartir nativo (iPad / Android dentro de la app): abre la hoja de compartir
+        //    del sistema, desde donde el usuario puede "Guardar imagen", AirDrop, correo, etc.
+        //    Es lo único fiable dentro del WebView de la app: ahí <a download> no descarga
+        //    y en WKWebView (iPad) hasta tumba el iframe al intentar navegar al data URL.
+        //    Requiere que la app anfitriona delegue el permiso con allow="web-share" en el iframe.
+        if (typeof navigator !== 'undefined' && typeof navigator.canShare === 'function' && navigator.canShare({ files: [archivo] })) {
+            try {
+                await navigator.share({ files: [archivo], title: 'Zibatá' });
+                return;
+            } catch (error) {
+                if ((error as DOMException)?.name === 'AbortError') return; // el usuario cerró la hoja
+                // cualquier otro error (permiso no delegado, etc.): caemos al fallback de descarga
+            }
+        }
+
+        // 2) Fallback navegador / escritorio (web normal, Electron): descarga de blob.
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = imagenFinal;
-        a.download = `zibata-tour-${Date.now()}.png`;
+        a.href = url;
+        a.download = nombre;
+        document.body.appendChild(a);
         a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
     };
 
     return (
