@@ -55,7 +55,7 @@ export default function PanelesOverlay() {
                         {Object.entries(categorias)
                             // 🚨 AQUÍ ESTÁ LA MAGIA DEL ORDENAMIENTO
                             .sort(([catA], [catB]) => {
-                                const ordenDeseado = ["Zibatá","Exteriores Zibatá", "Amenidades", "Parques", "Colegios", "Comercios"];
+                                const ordenDeseado = ["Zibatá","Exteriores Zibatá", "Amenidades", "Parques", "Clusters", "Accesos"];
                                 
                                 let indexA = ordenDeseado.indexOf(catA);
                                 let indexB = ordenDeseado.indexOf(catB);
