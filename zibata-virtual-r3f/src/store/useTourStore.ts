@@ -514,7 +514,7 @@ export const useTourStore = create<TourState>((set, get) => ({
             const archivoBlur = await generarVersionBlur(archivoOriginal);
             const nombre = `${id}-360-blur-${Math.random().toString(36).substring(7)}.webp`;
 
-            const { error: errUpload } = await supabase.storage.from('fotos_tour').upload(nombre, archivoBlur);
+            const { error: errUpload } = await supabase.storage.from('fotos_tour').upload(nombre, archivoBlur, { cacheControl: '31536000' });
             if (errUpload) throw errUpload;
             const { data } = supabase.storage.from('fotos_tour').getPublicUrl(nombre);
 
@@ -543,7 +543,7 @@ export const useTourStore = create<TourState>((set, get) => ({
             const archivoMini = await convertirAWebP(archivoOriginal, { calidad: 0.75, maxAncho: 800, maxAlto: 600 });
             const nombre = `${id}-thumb-${Math.random().toString(36).substring(7)}.webp`;
 
-            const { error: errUpload } = await supabase.storage.from('fotos_tour').upload(nombre, archivoMini);
+            const { error: errUpload } = await supabase.storage.from('fotos_tour').upload(nombre, archivoMini, { cacheControl: '31536000' });
             if (errUpload) throw errUpload;
             const { data } = supabase.storage.from('fotos_tour').getPublicUrl(nombre);
 
@@ -579,7 +579,7 @@ export const useTourStore = create<TourState>((set, get) => ({
             const archivoOptimizado = await convertirAWebP(archivoOriginal, { calidad: 0.85, maxAncho: 8192, maxAlto: 4096 });
             const nombre = `${id}-360-${Math.random().toString(36).substring(7)}.webp`;
 
-            const { error: errUpload } = await supabase.storage.from('fotos_tour').upload(nombre, archivoOptimizado);
+            const { error: errUpload } = await supabase.storage.from('fotos_tour').upload(nombre, archivoOptimizado, { cacheControl: '31536000' });
             if (errUpload) throw errUpload;
             const { data } = supabase.storage.from('fotos_tour').getPublicUrl(nombre);
 

@@ -41,7 +41,7 @@ export default function PanelEditarNodo() {
             const archivoWebp = await convertirAWebP(e.target.files[0], { calidad: 0.75, maxAncho: 800, maxAlto: 600 });
             const fileName = `${nodoActual}-thumb-${Math.random().toString(36).substring(7)}.webp`;
 
-            const { error } = await supabase.storage.from('fotos_tour').upload(fileName, archivoWebp);
+            const { error } = await supabase.storage.from('fotos_tour').upload(fileName, archivoWebp, { cacheControl: '31536000' });
             if (error) throw error;
 
             const { data } = supabase.storage.from('fotos_tour').getPublicUrl(fileName);
@@ -68,12 +68,12 @@ export default function PanelEditarNodo() {
             ]);
 
             const fileName = `${nodoActual}-360-${Math.random().toString(36).substring(7)}.webp`;
-            const { error } = await supabase.storage.from('fotos_tour').upload(fileName, archivoWebp);
+            const { error } = await supabase.storage.from('fotos_tour').upload(fileName, archivoWebp, { cacheControl: '31536000' });
             if (error) throw error;
             const { data } = supabase.storage.from('fotos_tour').getPublicUrl(fileName);
 
             const nameBlur = `${nodoActual}-360-blur-${Math.random().toString(36).substring(7)}.webp`;
-            const { error: errBlur } = await supabase.storage.from('fotos_tour').upload(nameBlur, archivoBlur);
+            const { error: errBlur } = await supabase.storage.from('fotos_tour').upload(nameBlur, archivoBlur, { cacheControl: '31536000' });
             if (errBlur) throw errBlur;
             const { data: dataBlur } = supabase.storage.from('fotos_tour').getPublicUrl(nameBlur);
 

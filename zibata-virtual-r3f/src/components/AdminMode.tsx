@@ -108,19 +108,19 @@ export default function AdminMode() {
 
             // --- PASO 1: Subir Foto 360 ---
             const name360 = `${formData.id}-360-${Math.random().toString(36).substring(7)}.webp`;
-            const { error: err360 } = await supabase.storage.from('fotos_tour').upload(name360, archivo360);
+            const { error: err360 } = await supabase.storage.from('fotos_tour').upload(name360, archivo360, { cacheControl: '31536000' });
             if (err360) throw err360;
             const { data: url360 } = supabase.storage.from('fotos_tour').getPublicUrl(name360);
 
             // --- PASO 1.5: Subir versión Blur (placeholder ligero mientras carga la de alta res) ---
             const nameBlur = `${formData.id}-360-blur-${Math.random().toString(36).substring(7)}.webp`;
-            const { error: errBlur } = await supabase.storage.from('fotos_tour').upload(nameBlur, archivo360Blur);
+            const { error: errBlur } = await supabase.storage.from('fotos_tour').upload(nameBlur, archivo360Blur, { cacheControl: '31536000' });
             if (errBlur) throw errBlur;
             const { data: urlBlur } = supabase.storage.from('fotos_tour').getPublicUrl(nameBlur);
 
             // --- PASO 2: Subir Miniatura ---
             const nameMini = `${formData.id}-thumb-${Math.random().toString(36).substring(7)}.webp`;
-            const { error: errMini } = await supabase.storage.from('fotos_tour').upload(nameMini, archivoMini);
+            const { error: errMini } = await supabase.storage.from('fotos_tour').upload(nameMini, archivoMini, { cacheControl: '31536000' });
             if (errMini) throw errMini;
             const { data: urlMini } = supabase.storage.from('fotos_tour').getPublicUrl(nameMini);
 
