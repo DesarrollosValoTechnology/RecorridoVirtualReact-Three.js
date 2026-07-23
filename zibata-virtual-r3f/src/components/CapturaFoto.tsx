@@ -23,15 +23,19 @@ function cargarImagen(src: string): Promise<HTMLImageElement> {
     });
 }
 
-// Recorta la captura centrada a la relación de aspecto elegida y le pega la barra
-// verde (con degradado) con el logo de Zibatá abajo a la derecha, igual que el
-// "Shared by" de Panoee.
+// Genera la imagen final con el marco tipo "mat" blanco: la foto queda recortada
+// exactamente a la relación de aspecto elegida (canvas total) pero con un borde blanco
+// alrededor —delgado arriba/izquierda/derecha, más grueso abajo— y ahí, en la franja
+// inferior, van los dos logos de marca: zibatá a la izquierda y "Planeado para durar
+// generaciones" a la derecha (diseño de marketing).
 async function generarImagenFinal(imagenOriginalUrl: string, ratio: number): Promise<string> {
-    const [img, logo] = await Promise.all([
+    const [img, logoZibata, logoPlaneado] = await Promise.all([
         cargarImagen(imagenOriginalUrl),
-        cargarImagen('/Assets/Logo Z_Lo imposible posible.png'),
+        cargarImagen('/Assets/Logo Zibata Verde.png'),
+        cargarImagen('/Assets/Logo Planeado Generaciones.png'),
     ]);
 
+    // El canvas final (incluyendo el marco) es el que respeta la relación de aspecto elegida.
     const ratioOriginal = img.width / img.height;
     let cropW: number;
     let cropH: number;
@@ -50,35 +54,46 @@ async function generarImagenFinal(imagenOriginalUrl: string, ratio: number): Pro
     canvas.height = cropH;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('No se pudo crear el contexto 2D');
-    ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
-    // Barra verde de marca, abajo a la derecha: se desvanece (alpha) de transparente
-    // a sólida hacia la derecha, igual que el efecto de Panoee. El ancho de la barra
-    // se calcula a partir del logo (no de la foto), para que solo cubra el logo y un
-    // poco de desvanecido antes de él, sin invadir buena parte de la imagen.
-    const bannerAlto = cropH * 0.1;
-    const paddingDerecho = bannerAlto * 0.5;
-    const paddingV = bannerAlto * 0.22;
-    const logoRatio = logo.width / logo.height;
-    const logoH = bannerAlto - paddingV * 2;
-    const logoW = logoH * logoRatio;
+    // Fondo blanco: es lo que queda visible en el marco (arriba/lados/abajo).
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, cropW, cropH);
 
-    const fadeAncho = logoW * 1.2; // qué tanto se alcanza a ver el desvanecido antes del logo
-    const bannerAncho = logoW + paddingDerecho * 2 + fadeAncho;
-    const bannerX = cropW - bannerAncho;
-    const bannerY = cropH - bannerAlto;
+    // Grosor del marco: como referencia se usa el lado corto del canvas, así el marco
+    // se ve proporcional sin importar si la relación elegida es cuadrada o panorámica.
+    const ladoCorto = Math.min(cropW, cropH);
+    const bordeFino = ladoCorto * 0.035; // arriba, izquierda, derecha
+    const bordeInferior = ladoCorto * 0.15; // franja de abajo, donde van los logos
 
-    const degradado = ctx.createLinearGradient(bannerX, bannerY, bannerX + bannerAncho, bannerY);
-    degradado.addColorStop(0, 'rgba(92, 184, 42, 0)');
-    degradado.addColorStop(0.6, 'rgba(92, 184, 42, 0.75)');
-    degradado.addColorStop(1, 'rgba(74, 150, 34, 0.96)');
-    ctx.fillStyle = degradado;
-    ctx.fillRect(bannerX, bannerY, bannerAncho, bannerAlto);
+    // Área donde va la foto, recortada de nuevo (esta vez a la relación del hueco interior).
+    const fotoW = cropW - bordeFino * 2;
+    const fotoH = cropH - bordeFino - bordeInferior;
+    const fotoRatio = fotoW / fotoH;
 
-    // El logo se ancla dentro de la zona sólida (derecha), no centrado en toda la barra
-    const logoX = bannerX + bannerAncho - paddingDerecho - logoW;
-    const logoY = bannerY + (bannerAlto - logoH) / 2;
-    ctx.drawImage(logo, logoX, logoY, logoW, logoH);
+    let fotoCropW: number;
+    let fotoCropH: number;
+    if (ratioOriginal > fotoRatio) {
+        fotoCropH = img.height;
+        fotoCropW = fotoCropH * fotoRatio;
+    } else {
+        fotoCropW = img.width;
+        fotoCropH = fotoCropW / fotoRatio;
+    }
+    const fotoCropX = (img.width - fotoCropW) / 2;
+    const fotoCropY = (img.height - fotoCropH) / 2;
+    ctx.drawImage(img, fotoCropX, fotoCropY, fotoCropW, fotoCropH, bordeFino, bordeFino, fotoW, fotoH);
+
+    // Los dos logos comparten la misma altura (dentro de la franja inferior) y se anclan
+    // cada uno a un lado, alineados con el borde interior de la foto.
+    const franjaY = cropH - bordeInferior;
+    const logoH = bordeInferior * 0.56;
+    const logoY = franjaY + (bordeInferior - logoH) / 2;
+
+    const zibataW = logoH * (logoZibata.width / logoZibata.height);
+    ctx.drawImage(logoZibata, bordeFino, logoY, zibataW, logoH);
+
+    const planeadoW = logoH * (logoPlaneado.width / logoPlaneado.height);
+    ctx.drawImage(logoPlaneado, cropW - bordeFino - planeadoW, logoY, planeadoW, logoH);
 
     return canvas.toDataURL('image/png');
 }
