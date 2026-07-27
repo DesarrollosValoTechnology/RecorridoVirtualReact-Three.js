@@ -17,6 +17,18 @@ export const CATEGORIA_ZIBATA = 'Zibatá';
 // Aérea" cuando se pulsa desde un nodo de nivel "Exteriores Zibatá".
 export const NODO_ZIBATA_ID = 'zibata';
 
+// Categoría "filtrable" de un hotspot = la categoría de su nodo DESTINO (Parques,
+// Amenidades, Comercios, Accesos, Clusters, ...). Devuelve null para los hotspots que no
+// deben poder ocultarse nunca: los que llevan a otra escena de "Exteriores Zibatá" (son
+// puramente para desplazarse por el dron, no un punto de interés — aunque algunos, como
+// los de "Clusters" (Luanna, Town Center...), también usen el ícono de dron, esos SÍ son
+// filtrables porque su categoría real no es "Exteriores Zibatá") o al nodo raíz "Zibatá".
+export function categoriaFiltrableDeHotspot(nodos: Record<string, any>, hotspot: { destino: string }): string | null {
+    const categoria = nodos[hotspot.destino]?.ui?.categoria;
+    if (!categoria || categoria === CATEGORIA_VISTA_AEREA || categoria === CATEGORIA_ZIBATA) return null;
+    return categoria;
+}
+
 interface TourState {
     nodoActual: string;
     isTransitioning: boolean;
@@ -55,6 +67,15 @@ interface TourState {
     marcarNodoPrincipal: (id: string) => Promise<void>;
     zonasActivas: boolean;
     toggleZonasActivas: () => void;
+
+    // --- FILTRO DE HOTSPOTS (vista exterior/aérea) ---
+    // Set de categorías (nodos.categoria: "Parques", "Amenidades", "Comercios", "Accesos",
+    // "Clusters", etc.) que el visitante decidió OCULTAR. Vacío = se ve todo. Vive a nivel
+    // de store (no por nodo) porque las 5 escenas de "Exteriores Zibatá" son en la práctica
+    // una sola experiencia continua de dron — el filtro debe mantenerse al pasar de una a otra.
+    categoriasHotspotOcultas: Set<string>;
+    toggleCategoriaHotspotOculta: (categoria: string) => void;
+    mostrarTodasCategoriasHotspot: () => void;
     generarBlurParaNodo: (id: string) => Promise<{ ok: boolean; error?: string }>;
     generarMiniaturaParaNodo: (id: string) => Promise<{ ok: boolean; error?: string }>;
     reoptimizarFoto360ParaNodo: (id: string) => Promise<{ ok: boolean; error?: string; sinCambios?: boolean }>;
@@ -116,6 +137,15 @@ export const useTourStore = create<TourState>((set, get) => ({
     // activa con el botón "Activar Zonas" cuando quiere explorar/viajar por ellas.
     zonasActivas: false,
     toggleZonasActivas: () => set((s) => ({ zonasActivas: !s.zonasActivas })),
+
+    categoriasHotspotOcultas: new Set<string>(),
+    toggleCategoriaHotspotOculta: (categoria) => set((s) => {
+        const nuevo = new Set(s.categoriasHotspotOcultas);
+        if (nuevo.has(categoria)) nuevo.delete(categoria);
+        else nuevo.add(categoria);
+        return { categoriasHotspotOcultas: nuevo };
+    }),
+    mostrarTodasCategoriasHotspot: () => set({ categoriasHotspotOcultas: new Set() }),
 
     // --- CARGA DESDE SUPABASE ---
     cargarNodos: async () => {

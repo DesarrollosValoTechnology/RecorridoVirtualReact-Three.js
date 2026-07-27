@@ -1,10 +1,14 @@
 // src/components/OverlayUI.tsx
-import { useRef, useState } from 'react';
-import { useTourStore, CATEGORIA_VISTA_AEREA, CATEGORIA_ZIBATA, NODO_ZIBATA_ID } from '../store/useTourStore';
+import { useMemo, useRef, useState } from 'react';
+import { useTourStore, CATEGORIA_VISTA_AEREA, CATEGORIA_ZIBATA, NODO_ZIBATA_ID, categoriaFiltrableDeHotspot } from '../store/useTourStore';
 import SocialBar from './SocialBar';
-import { diccionario } from '../data/diccionario';
+import { diccionario, traducirCategoriaHotspot } from '../data/diccionario';
 import MapaBase from './MapaBase';
 import { useClickAfuera } from '../utils/useClickAfuera';
+
+// Orden preferido de categorías en el filtro; cualquier categoría nueva que no esté
+// aquí (capturada en el admin) simplemente se agrega al final, alfabética.
+const ORDEN_CATEGORIAS_FILTRO = ['Parques', 'Amenidades', 'Comercios', 'Accesos', 'Clusters'];
 
 // 🚨 1. LE DECIMOS A TYPESCRIPT QUÉ DATOS VAMOS A RECIBIR
 interface OverlayProps {
@@ -31,6 +35,32 @@ export default function OverlayUI({ esAppEscritorio, isAdmin, onVolverAlMenu }: 
     const [herramientasAbiertas, setHerramientasAbiertas] = useState(false);
     const herramientasRef = useRef<HTMLDivElement>(null);
     useClickAfuera(herramientasRef, herramientasAbiertas, () => setHerramientasAbiertas(false));
+
+    // Filtro de hotspots por categoría (solo vista exterior/aérea): el desplegable solo
+    // ofrece las categorías que de verdad tienen algún hotspot en ESTE nodo — nada de
+    // mostrar "Pórticos" si aquí no hay ninguno.
+    const categoriasHotspotOcultas = useTourStore((state) => state.categoriasHotspotOcultas);
+    const toggleCategoriaHotspotOculta = useTourStore((state) => state.toggleCategoriaHotspotOculta);
+    const mostrarTodasCategoriasHotspot = useTourStore((state) => state.mostrarTodasCategoriasHotspot);
+    const [filtroAbierto, setFiltroAbierto] = useState(false);
+    const filtroRef = useRef<HTMLDivElement>(null);
+    useClickAfuera(filtroRef, filtroAbierto, () => setFiltroAbierto(false));
+
+    const categoriasDisponibles = useMemo(() => {
+        const encontradas = new Set<string>();
+        infoNodo?.hotspots?.forEach((h: any) => {
+            const categoria = categoriaFiltrableDeHotspot(nodos, h);
+            if (categoria) encontradas.add(categoria);
+        });
+        return Array.from(encontradas).sort((a, b) => {
+            const ia = ORDEN_CATEGORIAS_FILTRO.indexOf(a);
+            const ib = ORDEN_CATEGORIAS_FILTRO.indexOf(b);
+            if (ia !== -1 && ib !== -1) return ia - ib;
+            if (ia !== -1) return -1;
+            if (ib !== -1) return 1;
+            return a.localeCompare(b);
+        });
+    }, [infoNodo, nodos]);
 
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {
@@ -100,41 +130,87 @@ export default function OverlayUI({ esAppEscritorio, isAdmin, onVolverAlMenu }: 
                 <div id="info-fecha">{t["UI_FECHA_FOTOS"]}</div>
             </div>
 
-            {/* 1.5 VOLVER A VISTA AÉREA (jerarquía de 3 niveles: Zibatá → Exteriores Zibatá →
-                cualquier otro nodo. En "Zibatá" no hay nada más arriba, así que no se muestra.
-                Desde "Exteriores Zibatá" sube al nodo Zibatá; desde cualquier otro nodo, sube
-                al último nodo "Exteriores Zibatá" visitado. */}
-            {!esZibata && (
-                <button
-                    id="btn-volver-aerea"
-                    onClick={() => store.cargarNodo(esVistaAerea ? nodoZibataId : store.ultimoNodoAereo)}
-                    style={{ opacity: store.menuAbierto ? 0 : 1, pointerEvents: store.menuAbierto ? 'none' : 'auto' }}
-                    title="Volver a la vista aérea de dron"
-                >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M10 10 7 7"/><path d="m10 14-3 3"/><path d="m14 10 3-3"/><path d="m14 14 3 3"/>
-                        <path d="M14.205 4.139a4 4 0 1 1 5.439 5.863"/><path d="M19.637 14a4 4 0 1 1-5.432 5.868"/>
-                        <path d="M4.367 10a4 4 0 1 1 5.438-5.862"/><path d="M9.795 19.862a4 4 0 1 1-5.429-5.873"/>
-                        <rect x="10" y="8" width="4" height="8" rx="1"/>
-                    </svg>
-                    <span>Volver a Vista Aérea</span>
-                </button>
-            )}
+            {/* 1.5/1.6/1.7 CONTROLES SUPERIORES CENTRADOS: Volver a Vista Aérea, Activar Zonas
+                y Filtro de hotspots — los tres comparten fila/posición en vez de pisarse
+                entre sí (antes cada uno se auto-centraba con su propio position:absolute). */}
+            <div className="ui-controles-superiores" style={{ opacity: store.menuAbierto ? 0 : 1, pointerEvents: store.menuAbierto ? 'none' : 'auto' }}>
+                {/* VOLVER A VISTA AÉREA (jerarquía de 3 niveles: Zibatá → Exteriores Zibatá →
+                    cualquier otro nodo. En "Zibatá" no hay nada más arriba, así que no se muestra.
+                    Desde "Exteriores Zibatá" sube al nodo Zibatá; desde cualquier otro nodo, sube
+                    al último nodo "Exteriores Zibatá" visitado. */}
+                {!esZibata && (
+                    <button
+                        id="btn-volver-aerea"
+                        onClick={() => store.cargarNodo(esVistaAerea ? nodoZibataId : store.ultimoNodoAereo)}
+                        title="Volver a la vista aérea de dron"
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M10 10 7 7"/><path d="m10 14-3 3"/><path d="m14 10 3-3"/><path d="m14 14 3 3"/>
+                            <path d="M14.205 4.139a4 4 0 1 1 5.439 5.863"/><path d="M19.637 14a4 4 0 1 1-5.432 5.868"/>
+                            <path d="M4.367 10a4 4 0 1 1 5.438-5.862"/><path d="M9.795 19.862a4 4 0 1 1-5.429-5.873"/>
+                            <rect x="10" y="8" width="4" height="8" rx="1"/>
+                        </svg>
+                        <span>Volver a Vista Aérea</span>
+                    </button>
+                )}
 
-            {/* 1.6 ACTIVAR ZONAS (solo si este nodo tiene zonas/polígonos dibujados) */}
-            {!!infoNodo.zonas?.length && (
-                <button
-                    id="btn-activar-zonas"
-                    onClick={() => store.toggleZonasActivas()}
-                    style={{ opacity: store.menuAbierto ? 0 : 1, pointerEvents: store.menuAbierto ? 'none' : 'auto' }}
-                    title={store.zonasActivas ? 'Ocultar zonas y volver a la experiencia normal' : 'Ver y viajar por zonas de este mapa'}
-                >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M2 12h20"/><path d="M12 2v20"/><path d="M12 2 2 7l10 5 10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/>
-                    </svg>
-                    <span>{store.zonasActivas ? 'Ocultar Zonas' : 'Iniciar experiencia'}</span>
-                </button>
-            )}
+                {/* ACTIVAR ZONAS (solo si este nodo tiene zonas/polígonos dibujados) */}
+                {!!infoNodo.zonas?.length && (
+                    <button
+                        id="btn-activar-zonas"
+                        onClick={() => store.toggleZonasActivas()}
+                        title={store.zonasActivas ? 'Ocultar zonas y volver a la experiencia normal' : 'Ver y viajar por zonas de este mapa'}
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M2 12h20"/><path d="M12 2v20"/><path d="M12 2 2 7l10 5 10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/>
+                        </svg>
+                        <span>{store.zonasActivas ? 'Ocultar Zonas' : 'Iniciar experiencia'}</span>
+                    </button>
+                )}
+
+                {/* FILTRO DE HOTSPOTS (solo en la vista exterior/aérea, y solo si hay al menos
+                    una categoría filtrable presente en este nodo — nada de mostrar un filtro
+                    vacío). El desplegable es una checklist: cada categoría se puede prender o
+                    apagar de forma independiente. */}
+                {esVistaAerea && categoriasDisponibles.length > 0 && (
+                    <div className="contenedor-filtro-hotspots" ref={filtroRef}>
+                        <button
+                            id="btn-filtro-hotspots"
+                            onClick={() => setFiltroAbierto((v) => !v)}
+                            title={t["UI_FILTRO_TITULO"]}
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                            </svg>
+                            <span>{t["UI_BTN_FILTRO"]}</span>
+                            {categoriasHotspotOcultas.size > 0 && (
+                                <span className="badge-filtro-activo">{categoriasDisponibles.length - categoriasDisponibles.filter((c) => categoriasHotspotOcultas.has(c)).length}/{categoriasDisponibles.length}</span>
+                            )}
+                        </button>
+
+                        {filtroAbierto && (
+                            <div className="popover-filtro-hotspots">
+                                <div className="popover-filtro-titulo">{t["UI_FILTRO_TITULO"]}</div>
+                                {categoriasDisponibles.map((categoria) => (
+                                    <label key={categoria} className="opcion-filtro-hotspot">
+                                        <input
+                                            type="checkbox"
+                                            checked={!categoriasHotspotOcultas.has(categoria)}
+                                            onChange={() => toggleCategoriaHotspotOculta(categoria)}
+                                        />
+                                        <span>{traducirCategoriaHotspot(categoria, idiomaActual)}</span>
+                                    </label>
+                                ))}
+                                {categoriasHotspotOcultas.size > 0 && (
+                                    <button className="btn-filtro-mostrar-todo" onClick={mostrarTodasCategoriasHotspot}>
+                                        {t["UI_FILTRO_MOSTRAR_TODO"]}
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
 
             {/* 2. BOTONES ACCIÓN (Arriba Derecha) */}
             <div className="ui-top-right" ref={herramientasRef}>

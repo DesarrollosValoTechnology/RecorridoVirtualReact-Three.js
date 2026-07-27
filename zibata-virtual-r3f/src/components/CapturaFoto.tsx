@@ -46,9 +46,6 @@ async function generarImagenFinal(imagenOriginalUrl: string, ratio: number): Pro
         cropW = img.width;
         cropH = cropW / ratio;
     }
-    const cropX = (img.width - cropW) / 2;
-    const cropY = (img.height - cropH) / 2;
-
     const canvas = document.createElement('canvas');
     canvas.width = cropW;
     canvas.height = cropH;

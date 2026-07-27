@@ -14,9 +14,9 @@ const ROTACION_IMAGEN_MANUAL = 0;
 // Zoom fijo del minimapa (ventana chica, centrada en el nodo): más alto = ves menos
 // área alrededor del punto. Ajustar a ojo.
 const ZOOM_MINIMAPA = 4.5;
-// Multiplicador sobre el "zoom que muestra el plano completo" para el panel grande
-// (mismo espíritu del "+0.08" que tenía el código viejo, para matar bordes vacíos).
-const ZOOM_PANEL_FACTOR = 1.15;
+// Margen extra sobre el zoom "cover" del panel grande, para que no quede ni un pixel
+// de borde vacío por redondeo.
+const ZOOM_PANEL_MARGEN = 1.05;
 
 const DZI_URL = '/Assets/mapa-dzi/plano.dzi';
 
@@ -58,6 +58,11 @@ export default function MapaBase({ esMinimapa = false }: Props) {
         const viewer = OpenSeadragon({
             element: elementoRef.current,
             tileSources: DZI_URL,
+            // El drawer WebGL (el que elige 'auto' por default) a veces pinta el primer
+            // frame con la imagen deformada/chueca hasta que algo fuerza un redraw (p.ej.
+            // un click) — el drawer 'canvas' no tiene ese bug y para un mapa estático
+            // como este no perdemos nada de rendimiento.
+            drawer: 'canvas',
             showNavigationControl: false,
             showZoomControl: false,
             showHomeControl: false,
@@ -132,7 +137,19 @@ export default function MapaBase({ esMinimapa = false }: Props) {
                 viewer.viewport.zoomTo(ZOOM_MINIMAPA, undefined, true);
                 viewer.viewport.panTo(puntoViewport, true);
             } else {
-                const zoomInicial = viewer.viewport.getHomeZoom() * ZOOM_PANEL_FACTOR;
+                // El plano es un cuadrado perfecto (7937x7937) pero el panel casi nunca lo
+                // es (normalmente es bastante más ancho que alto). getHomeZoom() hace un fit
+                // tipo "contain" (muestra el plano completo, dejando franjas vacías a los
+                // lados o arriba/abajo según el caso) — acá calculamos el zoom tipo "cover"
+                // (llena el panel por completo, recortando lo que sobre del otro lado) para
+                // no dejar espacio vacío, sea cual sea la forma del panel.
+                const contenedor = viewer.viewport.getContainerSize();
+                const aspectContenedor = contenedor.x / contenedor.y;
+                const aspectContenido = tamano.x / tamano.y;
+                const factorCover = aspectContenedor > aspectContenido
+                    ? aspectContenedor / aspectContenido
+                    : aspectContenido / aspectContenedor;
+                const zoomInicial = viewer.viewport.getHomeZoom() * factorCover * ZOOM_PANEL_MARGEN;
                 viewer.viewport.zoomTo(zoomInicial, undefined, true);
                 viewer.viewport.panTo(puntoViewport, true);
 
@@ -147,6 +164,18 @@ export default function MapaBase({ esMinimapa = false }: Props) {
 
         if (viewer.world.getItemCount() > 0) centrarEnNodo();
         else viewer.addOnceHandler('open', centrarEnNodo);
+
+        // 🚨 El panel grande (no el minimapa) recién montado todavía no terminó de medir
+        // su tamaño real (autoResize usa un ResizeObserver que dispara su primer callback
+        // en el siguiente frame, no al construirse el visor). Si "open" llega antes de esa
+        // primera medición, getHomeZoom()/panTo calculan con el tamaño equivocado y el mapa
+        // queda chico y descentrado hasta que el usuario lo toca (eso dispara el propio
+        // recálculo interno de OpenSeadragon). Repetimos el centrado en el evento "resize"
+        // del visor para que se vea bien desde que se abre, sin esperar a esa interacción.
+        if (!esMinimapa) {
+            viewer.addHandler('resize', centrarEnNodo);
+            return () => { viewer.removeHandler('resize', centrarEnNodo); };
+        }
     }, [posX, posY, esMinimapa, nodoActual]);
 
     return (

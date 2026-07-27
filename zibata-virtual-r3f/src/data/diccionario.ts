@@ -43,7 +43,10 @@ export const diccionario: Record<string, Record<string, string>> = {
         "UI_MAPA_HIBRIDO": "Híbrido",
         "UI_MAPA_PLANO": "Mapa",
         "UI_CAPTURA_PISTA": "Ajusta tu vista moviéndote y haciendo zoom para capturar la toma perfecta.",
-        "UI_FECHA_FOTOS": "Julio 2026"
+        "UI_FECHA_FOTOS": "Julio 2026",
+        "UI_BTN_FILTRO": "FILTRO",
+        "UI_FILTRO_TITULO": "Mostrar en el mapa",
+        "UI_FILTRO_MOSTRAR_TODO": "Mostrar todo"
     },
     en: {
         // --- 3D LABELS ---
@@ -88,8 +91,27 @@ export const diccionario: Record<string, Record<string, string>> = {
         "UI_MAPA_HIBRIDO": "Hybrid",
         "UI_MAPA_PLANO": "Map",
         "UI_CAPTURA_PISTA": "Adjust your view by moving and zooming in and out to capture the perfect shot.",
-        "UI_FECHA_FOTOS": "July 2026"
+        "UI_FECHA_FOTOS": "July 2026",
+        "UI_BTN_FILTRO": "FILTER",
+        "UI_FILTRO_TITULO": "Show on the map",
+        "UI_FILTRO_MOSTRAR_TODO": "Show all"
     }
 };
 
 /* Hay que agregar la documentación de los diferentes keys */
+
+// Las categorías de hotspot (nodos.categoria en Supabase: "Parques", "Amenidades",
+// "Comercios", "Accesos", "Clusters", etc.) son texto libre capturado en el admin, no un
+// enum fijo — por eso viven en un mapeo aparte en vez de en `diccionario` (que es de
+// llaves fijas). Si una categoría nueva no está aquí, se muestra tal cual venga de la BD.
+export const traduccionesCategoriaHotspot: Record<string, Record<string, string>> = {
+    'Parques':    { es: 'Parques',    en: 'Parks' },
+    'Amenidades': { es: 'Amenidades', en: 'Amenities' },
+    'Comercios':  { es: 'Comercios',  en: 'Shops' },
+    'Accesos':    { es: 'Accesos',    en: 'Access Points' },
+    'Clusters':   { es: 'Clusters',   en: 'Clusters' },
+};
+
+export function traducirCategoriaHotspot(categoria: string, idioma: string): string {
+    return traduccionesCategoriaHotspot[categoria]?.[idioma] || categoria;
+}

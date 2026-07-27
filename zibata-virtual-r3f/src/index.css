@@ -183,12 +183,29 @@ body.en-iframe .ui-top-right {
     top: calc(25px + 68px);
 }
 
-#btn-volver-aerea {
+/* Fila centrada que agrupa "Volver a Vista Aérea", "Activar Zonas" y el "Filtro" —
+   antes cada botón se auto-centraba con su propio position:absolute y, si dos llegaban
+   a coincidir en el mismo nodo, se encimaban. Ahora el contenedor centra y un gap los
+   separa, sea cual sea la combinación que esté visible. */
+.ui-controles-superiores {
     position: absolute;
     top: 25px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 11;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: opacity 0.4s ease;
+}
+
+body.en-iframe .ui-controles-superiores {
+    top: calc(25px + 68px);
+}
+
+#btn-volver-aerea,
+#btn-activar-zonas,
+#btn-filtro-hotspots {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -203,46 +220,84 @@ body.en-iframe .ui-top-right {
     white-space: nowrap;
     cursor: pointer;
     box-shadow: 0 4px 15px rgba(92, 184, 42, 0.4);
-    transition: opacity 0.4s ease, transform 0.2s ease;
+    transition: transform 0.2s ease;
 }
 
-#btn-volver-aerea:hover {
-    transform: translateX(-50%) scale(1.05);
+#btn-volver-aerea:hover,
+#btn-activar-zonas:hover,
+#btn-filtro-hotspots:hover {
+    transform: scale(1.05);
 }
 
-body.en-iframe #btn-volver-aerea {
-    top: calc(25px + 68px);
+/* FILTRO DE HOTSPOTS: botón + popover checklist, anclado justo debajo del botón. */
+.contenedor-filtro-hotspots {
+    position: relative;
 }
 
-#btn-activar-zonas {
+.badge-filtro-activo {
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 20px;
+    padding: 1px 8px;
+    font-size: 11px;
+}
+
+.popover-filtro-hotspots {
     position: absolute;
-    top: 25px;
+    top: calc(100% + 10px);
     left: 50%;
     transform: translateX(-50%);
-    z-index: 11;
+    background: var(--panel-bg);
+    backdrop-filter: var(--panel-blur);
+    border: var(--panel-borde);
+    border-radius: 14px;
+    padding: 14px 16px;
+    min-width: 190px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 12;
+}
+
+.popover-filtro-titulo {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.opcion-filtro-hotspot {
     display: flex;
     align-items: center;
-    gap: 8px;
-    background: var(--zibata-verde);
+    gap: 10px;
     color: #ffffff;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 30px;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
+    font-size: 14px;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(92, 184, 42, 0.4);
-    transition: opacity 0.4s ease, transform 0.2s ease;
 }
 
-#btn-activar-zonas:hover {
-    transform: translateX(-50%) scale(1.05);
+.opcion-filtro-hotspot input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--zibata-verde);
+    cursor: pointer;
+    flex-shrink: 0;
 }
 
-body.en-iframe #btn-activar-zonas {
-    top: calc(25px + 68px);
+.btn-filtro-mostrar-todo {
+    background: transparent;
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--zibata-verde);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 8px 0 0;
+    margin-top: 2px;
+    cursor: pointer;
+    text-align: left;
 }
 
 #btn-cerrar-captura {
@@ -660,24 +715,36 @@ button,
     }
 
     /* En móvil van pegados debajo del bloque de título ("Zibatá" / categoría), a la
-       izquierda, en vez de centrados arriba (donde chocaban con Contáctanos). */
-    #btn-volver-aerea,
-    #btn-activar-zonas {
+       izquierda, en vez de centrados arriba (donde chocaban con Contáctanos). Si hay más
+       de un botón (ej. "Volver a Vista Aérea" + "Filtro"), se acomodan en varias líneas. */
+    .ui-controles-superiores {
         top: 72px !important;
         left: 15px !important;
         transform: none !important;
+        flex-wrap: wrap;
+        max-width: calc(100% - 30px);
+    }
+
+    #btn-volver-aerea,
+    #btn-activar-zonas,
+    #btn-filtro-hotspots {
         font-size: 11px !important;
         padding: 8px 14px !important;
     }
 
     #btn-volver-aerea:hover,
-    #btn-activar-zonas:hover {
+    #btn-activar-zonas:hover,
+    #btn-filtro-hotspots:hover {
         transform: none !important;
     }
 
-    body.en-iframe #btn-volver-aerea,
-    body.en-iframe #btn-activar-zonas {
+    body.en-iframe .ui-controles-superiores {
         top: calc(72px + 68px) !important;
+    }
+
+    .popover-filtro-hotspots {
+        left: 0;
+        transform: none;
     }
 
     /* Barra de herramientas (captura, girar, idioma, compartir, pantalla completa):
