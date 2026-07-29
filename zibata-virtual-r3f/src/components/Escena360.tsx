@@ -130,3 +130,5 @@ export default function Escena360() {
         </group>
     );
 }
+
+

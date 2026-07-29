@@ -1,16 +1,83 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/Assets/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Tour Virtual ZIBATA</title>
+    <meta name="theme-color" content="#5CB82A" />
+
+    <title>Recorrido Virtual 360° Zibatá | Zibatá Querétaro</title>
+    <meta name="description" content="Explora Zibatá, Querétaro, con un recorrido virtual 360°: parques, amenidades, clusters residenciales y accesos del desarrollo. Lo imposible, posible." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://zibata360.mx/" />
+
+    <!-- Open Graph (WhatsApp, Facebook, etc.) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Zibatá" />
+    <meta property="og:locale" content="es_MX" />
+    <meta property="og:url" content="https://zibata360.mx/" />
+    <meta property="og:title" content="Recorrido Virtual 360° Zibatá" />
+    <meta property="og:description" content="Explora Zibatá, Querétaro, con un recorrido virtual 360°: parques, amenidades, clusters residenciales y accesos del desarrollo. Lo imposible, posible." />
+    <meta property="og:image" content="https://zibata360.mx/Assets/foto_zibata.jpg" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Recorrido Virtual 360° Zibatá" />
+    <meta name="twitter:description" content="Explora Zibatá, Querétaro, con un recorrido virtual 360°: parques, amenidades, clusters residenciales y accesos del desarrollo." />
+    <meta name="twitter:image" content="https://zibata360.mx/Assets/foto_zibata.jpg" />
+
+    <!-- Datos estructurados: quiénes somos + dónde está Zibatá, para resultados enriquecidos. -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Zibatá",
+      "url": "https://zibata360.mx/",
+      "logo": "https://zibata360.mx/Assets/logo.png",
+      "sameAs": [
+        "https://facebook.com/zibata.mx",
+        "https://instagram.com/zibata.mx",
+        "https://youtube.com/@zibataoficial",
+        "https://tiktok.com/@zibata.mx"
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Recorrido Virtual 360° Zibatá",
+      "url": "https://zibata360.mx/",
+      "description": "Recorrido virtual 360° del desarrollo Zibatá en Querétaro: parques, amenidades, clusters residenciales y accesos.",
+      "about": {
+        "@type": "Place",
+        "name": "Zibatá",
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 20.6767932617282,
+          "longitude": -100.335412019993
+        },
+        "address": {
+          "@type": "PostalAddress",
+          "addressRegion": "Querétaro",
+          "addressCountry": "MX"
+        }
+      }
+    }
+    </script>
+
     <!-- Es el primer elemento visible (logo de la pantalla de carga) y el candidato a LCP:
          lo pedimos desde el HTML, sin esperar a que cargue React. -->
     <link rel="preload" as="image" href="/Assets/logo_supraterra.png" fetchpriority="high" />
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <div style="padding:40px;font-family:sans-serif;max-width:640px;margin:0 auto;">
+        <h1>Zibatá — Recorrido Virtual 360°</h1>
+        <p>Explora Zibatá, el desarrollo residencial en Querétaro, con un recorrido virtual interactivo en 360°: parques, amenidades, clusters residenciales y accesos. Activa JavaScript en tu navegador para vivir la experiencia completa.</p>
+      </div>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
