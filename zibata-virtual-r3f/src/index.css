@@ -741,10 +741,16 @@ button,
         max-width: 50vw;
     }
 
-    /* Subimos las redes sociales por encima del menú inferior (igual que el fix de
-       arriba, pero también cubre tablets en horizontal por encima de 1024px). */
+    /* En vez de despegar las redes sociales del borde inferior (se veía "flotando" en
+       tablets anchas, con hueco vacío debajo), las achicamos igual que en móvil —
+       ocultamos el texto "¡SÍGUENOS!" y dejamos solo los íconos — para que quepan sin
+       chocar con el menú inferior centrado, quedando ambos pegados al mismo borde. */
     .ui-bottom-left {
-        bottom: 105px !important;
+        gap: 10px !important;
+        padding: 8px 14px !important;
+    }
+    .texto-follow {
+        display: none !important;
     }
     .ui-bottom-bar-pill {
         gap: 15px !important;
@@ -752,14 +758,13 @@ button,
     }
 
     /* El minimapa circular (170px, pegado a la esquina) era lo que más chocaba con la
-       píldora inferior centrada en anchos de tablet: lo encogemos y lo subimos a la
-       misma altura que las redes sociales, despejando toda la franja inferior. */
+       píldora inferior centrada en anchos de tablet: lo encogemos, pero lo dejamos
+       pegado a la esquina (mismo borde que todo lo demás) en vez de subirlo. */
     .modo-minimapa {
-        width: 110px;
-        height: 110px;
-        bottom: 105px;
-        right: 20px;
-        border-width: 2px;
+        width: 130px !important;
+        height: 130px !important;
+        right: 20px !important;
+        border-width: 2px !important;
     }
 }
 
