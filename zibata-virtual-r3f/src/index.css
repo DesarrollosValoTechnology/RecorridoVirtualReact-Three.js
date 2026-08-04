@@ -685,6 +685,106 @@ button,
 }
 
 /* ==========================================
+   7.5 RESPONSIVE TABLET (TÁCTIL, VERTICAL Y HORIZONTAL)
+   --------------------------------------------
+   Antes esta franja de pantallas (iPad y similares) no tenía trato propio:
+   heredaba el layout de escritorio (barra de herramientas completa + botones
+   centrados + título, todo en la misma fila) pero con menos ancho real para
+   acomodarlo, así que se encimaban. Se detecta por tipo de puntero
+   (sin hover, táctil grueso) en vez de solo por ancho/alto, para que:
+   - Aplique igual en vertical (768–1024px de ancho) y horizontal
+     (1024–1366px de ancho), sin necesitar dos breakpoints distintos.
+   - No le "robe" el layout a una laptop/monitor que por casualidad
+     comparta la misma resolución (esos usan mouse: hover:hover, pointer:fine).
+   min-height:600 además excluye celulares en horizontal (altura corta),
+   que ya tienen su propio trato más compacto en la sección de abajo.
+   ========================================== */
+@media (hover: none) and (pointer: coarse) and (min-width: 769px) and (min-height: 600px) {
+    /* Igual que en móvil: colapsamos captura/girar/idioma/compartir/pantalla-completa
+       detrás de "•••" para que la fila de arriba a la derecha no compita en ancho
+       con el título y los controles centrados (antes iban expandidos siempre). */
+    .herramientas-pill {
+        display: none !important;
+    }
+    .herramientas-pill.herramientas-abiertas {
+        display: flex !important;
+    }
+    .btn-herramientas-toggle {
+        display: flex !important;
+        justify-content: center;
+        align-items: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        background: var(--panel-bg) !important;
+        backdrop-filter: var(--panel-blur);
+        border: var(--panel-borde) !important;
+        border-radius: 50%;
+    }
+
+    #info-nodo-actual {
+        max-width: 45%;
+    }
+    #info-titulo {
+        font-size: 19px;
+    }
+
+    #btn-volver-aerea,
+    #btn-activar-zonas,
+    #btn-filtro-hotspots {
+        font-size: 12px !important;
+        padding: 9px 16px !important;
+    }
+    .ui-controles-superiores {
+        flex-wrap: wrap;
+        justify-content: center;
+        max-width: 50vw;
+    }
+
+    /* Subimos las redes sociales por encima del menú inferior (igual que el fix de
+       arriba, pero también cubre tablets en horizontal por encima de 1024px). */
+    .ui-bottom-left {
+        bottom: 105px !important;
+    }
+    .ui-bottom-bar-pill {
+        gap: 15px !important;
+        padding: 10px 22px !important;
+    }
+
+    /* El minimapa circular (170px, pegado a la esquina) era lo que más chocaba con la
+       píldora inferior centrada en anchos de tablet: lo encogemos y lo subimos a la
+       misma altura que las redes sociales, despejando toda la franja inferior. */
+    .modo-minimapa {
+        width: 110px;
+        height: 110px;
+        bottom: 105px;
+        right: 20px;
+        border-width: 2px;
+    }
+}
+
+/* En vertical (tablet "de pie") el ancho disponible es más angosto que en horizontal:
+   bajamos los controles centrados debajo del bloque de título en vez de centrarlos
+   arriba, para que nunca compitan por el mismo espacio horizontal que el título o la
+   barra de herramientas (que es justo lo que se encimaba). */
+@media (hover: none) and (pointer: coarse) and (min-width: 769px) and (min-height: 600px) and (orientation: portrait) {
+    .ui-controles-superiores {
+        top: 100px !important;
+        left: 20px !important;
+        transform: none !important;
+        justify-content: flex-start;
+        max-width: calc(100% - 40px);
+    }
+    body.en-iframe .ui-controles-superiores {
+        top: calc(100px + 68px) !important;
+    }
+    .popover-filtro-hotspots {
+        left: 0;
+        transform: none;
+    }
+}
+
+/* ==========================================
    8. RESPONSIVE MÓVIL
    ========================================== */
 @media (max-width: 768px) {
