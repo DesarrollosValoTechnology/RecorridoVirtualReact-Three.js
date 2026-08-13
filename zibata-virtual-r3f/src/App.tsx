@@ -15,6 +15,7 @@ import IndicadorFOV from './components/IndicadorFOV';
 import ControlZoomFOV from './components/ControlZoomFOV';
 import LogoCielo from './components/LogoCielo';
 import TooltipPreview from './components/TooltipPreview';
+import TooltipLote from './components/TooltipLote';
 import CapturaFoto from './components/CapturaFoto';
 
 // 🚨 Lazy: el modo admin (?admin=true) es un caso raro para el visitante normal.
@@ -27,6 +28,7 @@ const PanelEditorHotspots = lazy(() => import('./components/PanelEditorHotspots'
 const PanelEditarNodo = lazy(() => import('./components/PanelEditarNodo'));
 const PanelEditorLabels = lazy(() => import('./components/PanelEditorLabels'));
 const PanelEditorZonas = lazy(() => import('./components/PanelEditorZonas'));
+const PanelEditorReticula = lazy(() => import('./components/PanelEditorReticula'));
 
 function SincronizadorRadar({ controlsRef }: { controlsRef: any }) {
     const { camera } = useThree();
@@ -218,6 +220,7 @@ function App() {
                 {adminPanelActivo === 'editorZonas' && <PanelEditorZonas />}
                 {adminPanelActivo === 'editorHotspots' && <PanelEditorHotspots />}
                 {adminPanelActivo === 'editarNodo' && <PanelEditarNodo />}
+                {adminPanelActivo === 'editorReticula' && <PanelEditorReticula />}
             </Suspense>
         )}
 
@@ -232,6 +235,7 @@ function App() {
         />
         <PanelesOverlay />
         <TooltipPreview />
+        <TooltipLote />
         <IndicadorFOV />
         <CapturaFoto />
 

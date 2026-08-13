@@ -46,7 +46,20 @@ export const diccionario: Record<string, Record<string, string>> = {
         "UI_FECHA_FOTOS": "Julio 2026",
         "UI_BTN_FILTRO": "FILTRO",
         "UI_FILTRO_TITULO": "Mostrar en el mapa",
-        "UI_FILTRO_MOSTRAR_TODO": "Mostrar todo"
+        "UI_FILTRO_MOSTRAR_TODO": "Mostrar todo",
+        "UI_RETICULA_MOSTRAR": "Ver Lotes",
+        "UI_RETICULA_OCULTAR": "Ocultar Lotes",
+        "UI_RETICULA_LEYENDA": "Retícula de lotes ilustrativa — ajustada a ojo sobre la foto, no es el lindero real.",
+        "UI_LOTE_SUBTITULO": "Déjanos tus datos y te contactamos para darte los detalles de este lote.",
+        "UI_LOTE_ERROR_CONTACTO": "Déjanos un correo o un teléfono para poder contactarte.",
+        "UI_LOTE_AVISO_ACEPTO": "Acepto el",
+        "UI_LOTE_AVISO_LINK": "Aviso de Privacidad y Términos",
+        "UI_LOTE_ENVIANDO": "Enviando...",
+        "UI_LOTE_GRACIAS_TITULO": "¡Gracias!",
+        "UI_LOTE_GRACIAS_TEXTO": "En breve alguien de nuestro equipo te contactará.",
+        "UI_LOTE_CERRAR": "Cerrar",
+        "UI_LOTE_ERROR_ENVIO": "Hubo un problema al enviar. Intenta de nuevo.",
+        "UI_LOTE_NO_DISPONIBLE_TEXTO": "Esta propiedad ya no está disponible. Te invitamos a explorar los demás lotes del desarrollo; con gusto te ayudamos a encontrar el que buscas.",
     },
     en: {
         // --- 3D LABELS ---
@@ -94,7 +107,20 @@ export const diccionario: Record<string, Record<string, string>> = {
         "UI_FECHA_FOTOS": "July 2026",
         "UI_BTN_FILTRO": "FILTER",
         "UI_FILTRO_TITULO": "Show on the map",
-        "UI_FILTRO_MOSTRAR_TODO": "Show all"
+        "UI_FILTRO_MOSTRAR_TODO": "Show all",
+        "UI_RETICULA_MOSTRAR": "Show Lots",
+        "UI_RETICULA_OCULTAR": "Hide Lots",
+        "UI_RETICULA_LEYENDA": "Illustrative lot grid — eyeballed against the photo, not the real boundary.",
+        "UI_LOTE_SUBTITULO": "Leave your details and we'll contact you with more information about this lot.",
+        "UI_LOTE_ERROR_CONTACTO": "Leave an email or a phone number so we can contact you.",
+        "UI_LOTE_AVISO_ACEPTO": "I accept the",
+        "UI_LOTE_AVISO_LINK": "Privacy Notice and Terms",
+        "UI_LOTE_ENVIANDO": "Sending...",
+        "UI_LOTE_GRACIAS_TITULO": "Thank you!",
+        "UI_LOTE_GRACIAS_TEXTO": "Someone from our team will contact you shortly.",
+        "UI_LOTE_CERRAR": "Close",
+        "UI_LOTE_ERROR_ENVIO": "Something went wrong. Please try again.",
+        "UI_LOTE_NO_DISPONIBLE_TEXTO": "This property is no longer available. We invite you to explore the other lots in the development; we'd be glad to help you find the right one.",
     }
 };
 

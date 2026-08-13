@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { useTourStore } from '../store/useTourStore';
 import { abrirMapaInteractivo } from '../utils/mapaRadar';
 import FormularioContacto from './FormularioContacto';
+import FormularioProspectoLote from './FormularioProspectoLote';
+import PlanoUbicacionLote from './PlanoUbicacionLote';
 import { diccionario } from '../data/diccionario';
 import MapaBase from './MapaBase';
 
@@ -178,6 +180,38 @@ export default function PanelesOverlay() {
                     <div style={{ marginTop: '12px', color: 'var(--zibata-verde)', fontSize: '13px', fontWeight: 'bold', textAlign: 'center', opacity: copiado ? 1 : 0, transition: 'opacity 0.3s' }}>
                         {t["UI_MENSAJE_COPIADO"]}
                     </div>
+                </div>
+            </div>
+
+            {/* 6. PANEL: LOTE (se llega tocando un marcador en MarcadoresLotes.tsx) — bifurca
+                según disponibilidad: el formulario de siempre, o un mensaje breve sin él. */}
+            <div className={`panel-generico ${store.panelActivo === 'lote' ? '' : 'oculto'}`} onClick={cerrarPanel}>
+                <div className="panel-contenido panel-contenido--lote" onClick={(e) => e.stopPropagation()}>
+                    <button className="btn-cerrar-panel" onClick={cerrarPanel}>✖</button>
+                    {store.loteSeleccionado && (
+                        <>
+                            <h2 className="form-title" style={{ textAlign: 'center' }}>{store.loteSeleccionado.clave}</h2>
+                            <div className="panel-lote-layout">
+                                <PlanoUbicacionLote
+                                    clave={store.loteSeleccionado.clave}
+                                    inmueble={store.loteSeleccionado.inmueble}
+                                    disponible={store.loteSeleccionado.disponible}
+                                />
+                                <div className="panel-lote-columna-derecha">
+                                    {store.loteSeleccionado.disponible ? (
+                                        <FormularioProspectoLote
+                                            clave={store.loteSeleccionado.clave}
+                                            inmueble={store.loteSeleccionado.inmueble}
+                                        />
+                                    ) : (
+                                        <p style={{ color: '#ccc', fontSize: '14px', lineHeight: 1.6, textAlign: 'center' }}>
+                                            {t["UI_LOTE_NO_DISPONIBLE_TEXTO"]}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         </>

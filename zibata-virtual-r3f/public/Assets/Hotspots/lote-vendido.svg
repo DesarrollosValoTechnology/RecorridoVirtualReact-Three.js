@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Misma casa que lote-disponible.svg, atenuada, tachada con una diagonal gruesa (para que
+     sobreviva el achique a ~15-17px reales) — se distingue por FORMA, no solo por color/chip.
+     El chip CSS (.no-disponible) también la apaga más — ver
+     encargo-ajuste-marcadores-recorrido360.md. -->
+<svg id="Capa_1" data-name="Capa 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 59 59" width="256" height="256">
+  <g fill="#fff" opacity=".55">
+    <polygon points="29.5 6 6 26.5 53 26.5 29.5 6"/>
+    <rect x="12" y="25" width="35" height="28"/>
+  </g>
+  <line x1="6" y1="53" x2="53" y2="6" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+</svg>

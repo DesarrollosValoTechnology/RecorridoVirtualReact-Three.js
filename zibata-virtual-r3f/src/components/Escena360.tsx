@@ -1,5 +1,5 @@
 // src/components/Escena360.tsx
-import { useEffect, useRef, lazy, useMemo } from 'react';
+import { useEffect, useRef, lazy, useMemo, Suspense } from 'react';
 import { useTourStore, CATEGORIA_VISTA_AEREA, categoriaFiltrableDeHotspot } from '../store/useTourStore';
 import Hotspot from './Hotspot';
 import Label from './Label';
@@ -15,6 +15,13 @@ const ZonaEditable = lazy(() => import('./ZonaEditable'));
 const ZonaDibujoOverlay = lazy(() => import('./ZonaDibujoOverlay'));
 // Zona (vista normal) SÍ la usan todos los visitantes que pasen por un nodo con zonas.
 import Zona from './Zona';
+// Retícula/marcadores de lote: solo en los 2 nodos de terreno (ver reticulaLotesConfig.ts).
+// ReticulaLotes (contornos completos) es solo para calibrar en admin -> lazy, un visitante
+// normal nunca la descarga. MarcadoresLotes (íconos) sí la ve el público -> no es lazy.
+const ReticulaLotes = lazy(() => import('./ReticulaLotes'));
+import MarcadoresLotes from './MarcadoresLotes';
+import ContornosLotesPublico from './ContornosLotesPublico';
+import { NODOS_CON_RETICULA } from '../data/reticulaLotesConfig';
 
 function SincronizadorMinimapa({ offsetGrados = 0 }: { offsetGrados: number }) {
     const { camera } = useThree();
@@ -51,7 +58,8 @@ export default function Escena360() {
         adminPanelActivo,
         capturaAbierta,
         zonasActivas,
-        categoriasHotspotOcultas
+        categoriasHotspotOcultas,
+        reticulaLotesVisible
     } = useTourStore();
 
     const infoNodo = nodos[nodoActual];
@@ -127,6 +135,27 @@ export default function Escena360() {
                 return <Zona key={`zona-${zona.id || index}`} datos={zona} />;
             })}
             {adminPanelActivo === 'editorZonas' && <ZonaDibujoOverlay />}
+
+            {/* RETÍCULA/MARCADORES DE LOTE: experimento reversible, solo en nodos de terreno.
+                En el editor de admin se ven los CONTORNOS completos coloreados por
+                disponibilidad (contra eso se calibra posición/giro/altura), sin importar el
+                interruptor público. Fuera de ahí, el público ve el contorno discreto/uniforme
+                de TODOS los lotes (contexto, no protagonista, no tocable) + los MARCADORES
+                encima (ahí está toda la interacción) — juntos, no uno u otro. */}
+            {mostrarElementosInteractivos && NODOS_CON_RETICULA[nodoActual] && (
+                adminPanelActivo === 'editorReticula' ? (
+                    <Suspense fallback={null}>
+                        <ReticulaLotes />
+                    </Suspense>
+                ) : (
+                    reticulaLotesVisible && (
+                        <>
+                            <ContornosLotesPublico />
+                            <MarcadoresLotes />
+                        </>
+                    )
+                )
+            )}
         </group>
     );
 }

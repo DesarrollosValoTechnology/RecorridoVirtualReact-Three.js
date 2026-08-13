@@ -5,6 +5,16 @@ export default defineConfig({
     plugins: [react()],
     base: './',
 
+    // Puerto FIJO y estricto, igual que AppZibata (5173) y el Portal de Ventas (5175).
+    // Sin esto Vite arranca en 5173 y, si está ocupado, se mueve solo al siguiente — que es
+    // el 5174 del backend. Cuando eso pasa, el error que sale no menciona puertos por ningún
+    // lado y cuesta horas encontrarlo (ya pasó dos veces en este ecosistema).
+    // strictPort hace que falle de frente en vez de moverse en silencio.
+    server: {
+        port: 5176,
+        strictPort: true,
+    },
+
     build: {
         outDir: 'dist',
         emptyOutDir: true, 

@@ -2,6 +2,30 @@
 import { create } from 'zustand';
 import { supabase } from '../supabase/client';
 import { generarVersionBlur, convertirAWebP } from '../utils/imagenAWebp';
+import { ajusteReticulaPorDefecto, type AjusteReticula } from '../data/reticulaLotesConfig';
+
+// --- RETÍCULA DE LOTES: persistencia (experimento, ver reticulaLotesConfig.ts) ---
+// Mientras no se decida un esquema de Supabase compartido con el CRM, el ajuste vive en
+// localStorage — cambiar esto por escritura a Supabase no debería tocar ni el componente 3D
+// ni el panel de admin, solo el cuerpo de actualizarAjusteReticula/resetearAjusteReticula.
+const LS_KEY_RETICULA = 'zibata_reticula_ajustes_v1';
+
+function cargarAjustesReticulaGuardados(): Record<string, AjusteReticula> {
+    try {
+        const crudo = localStorage.getItem(LS_KEY_RETICULA);
+        return crudo ? JSON.parse(crudo) : {};
+    } catch {
+        return {};
+    }
+}
+
+function guardarAjustesReticula(ajustes: Record<string, AjusteReticula>) {
+    try {
+        localStorage.setItem(LS_KEY_RETICULA, JSON.stringify(ajustes));
+    } catch {
+        // localStorage puede fallar en modo privado/cuota llena: no es crítico, seguimos en memoria.
+    }
+}
 
 const getInitialNode = () => {
     const params = new URLSearchParams(window.location.search);
@@ -39,7 +63,7 @@ interface TourState {
     userQuiereRotacion: boolean;
     idiomaActual: 'es' | 'en';
     menuAbierto: boolean;
-    panelActivo: 'contacto' | 'compartir' | 'ubicacion' | 'mapa' | null;
+    panelActivo: 'contacto' | 'compartir' | 'ubicacion' | 'mapa' | 'lote' | null;
     nodos: Record<string, any>;
     cargandoNodos: boolean;
     cargarNodos: () => Promise<void>;
@@ -58,8 +82,8 @@ interface TourState {
     cargarNodo: (id: string) => void;
     tooltipHover: { titulo: string, miniatura: string, x: number, y: number } | null;
     setTooltipHover: (data: any) => void;
-    adminPanelActivo: 'nuevoNodo' | 'editorHotspots' | 'editarNodo' | 'editorLabels' | 'editorZonas' | 'explorador' | null;
-    setAdminPanelActivo: (panel: 'nuevoNodo' | 'editorHotspots' | 'editarNodo' | 'editorLabels' | 'editorZonas' | 'explorador' | null) => void;
+    adminPanelActivo: 'nuevoNodo' | 'editorHotspots' | 'editarNodo' | 'editorLabels' | 'editorZonas' | 'editorReticula' | 'explorador' | null;
+    setAdminPanelActivo: (panel: 'nuevoNodo' | 'editorHotspots' | 'editarNodo' | 'editorLabels' | 'editorZonas' | 'editorReticula' | 'explorador' | null) => void;
     actualizarPosicionLabel: (id: string, x: number, y: number, z: number) => Promise<void>;
     actualizarNodoActual: (cambios: any) => Promise<void>;
     borrarNodoActual: () => Promise<{ ok: boolean; error?: string }>;
@@ -112,6 +136,25 @@ interface TourState {
     actualizarPropiedadesZona: (id: string, campo: string, valor: any) => Promise<void>;
     actualizarVerticeZona: (id: string, indice: number, x: number, y: number, z: number) => Promise<void>;
     borrarZona: (id: string) => Promise<void>;
+
+    // --- RETÍCULA DE LOTES (experimento, solo nodos de terreno: ver reticulaLotesConfig.ts) ---
+    // Interruptor público: apagado por default, el visitante lo enciende para verla.
+    reticulaLotesVisible: boolean;
+    toggleReticulaLotes: () => void;
+    // Ajuste manual por nodo (offsetX, offsetZ, yawDeg, alturaM), persistido en localStorage.
+    ajustesReticula: Record<string, AjusteReticula>;
+    actualizarAjusteReticula: (nodoId: string, cambios: Partial<AjusteReticula>) => void;
+    resetearAjusteReticula: (nodoId: string) => void;
+
+    // --- DISPONIBILIDAD DE LOTES: lote tocado, pendiente de mostrar en el panel "lote" ---
+    // `disponible` decide qué bifurcación del panel se muestra (PanelesOverlay.tsx): el
+    // formulario de siempre, o un mensaje breve sin formulario.
+    loteSeleccionado: { clave: string; inmueble: string; disponible: boolean } | null;
+    setLoteSeleccionado: (val: { clave: string; inmueble: string; disponible: boolean } | null) => void;
+
+    // --- MARCADORES DE LOTE: etiqueta al pasar el mouse (solo escritorio; ver MarcadoresLotes.tsx) ---
+    tooltipLote: { clave: string; disponible: boolean; x: number; y: number } | null;
+    setTooltipLote: (val: { clave: string; disponible: boolean; x: number; y: number } | null) => void;
 }
 
 export const useTourStore = create<TourState>((set, get) => ({
@@ -639,8 +682,9 @@ export const useTourStore = create<TourState>((set, get) => ({
     setPanelActivo: (val) => {
         set({ panelActivo: val });
         // Si cerramos un panel, por pura seguridad borramos cualquier tooltip flotante
+        // y el lote que estuviera seleccionado para el formulario de disponibilidad.
         if (val === null) {
-            set({ tooltipHover: null });
+            set({ tooltipHover: null, loteSeleccionado: null });
         }
     },
     toggleRotacion: () => set((s) => ({ userQuiereRotacion: !s.userQuiereRotacion })),
@@ -740,4 +784,28 @@ export const useTourStore = create<TourState>((set, get) => ({
     setFovActual: (fov) => set({ fovActual: fov }),
     capturaAbierta: false,
     setCapturaAbierta: (val) => set({ capturaAbierta: val }),
+
+    // --- RETÍCULA DE LOTES ---
+    reticulaLotesVisible: false,
+    toggleReticulaLotes: () => set((s) => ({ reticulaLotesVisible: !s.reticulaLotesVisible })),
+
+    ajustesReticula: cargarAjustesReticulaGuardados(),
+    actualizarAjusteReticula: (nodoId, cambios) => {
+        const actual = get().ajustesReticula[nodoId] ?? ajusteReticulaPorDefecto(nodoId);
+        const nuevos = { ...get().ajustesReticula, [nodoId]: { ...actual, ...cambios } };
+        guardarAjustesReticula(nuevos);
+        set({ ajustesReticula: nuevos });
+    },
+    resetearAjusteReticula: (nodoId) => {
+        const nuevos = { ...get().ajustesReticula, [nodoId]: ajusteReticulaPorDefecto(nodoId) };
+        guardarAjustesReticula(nuevos);
+        set({ ajustesReticula: nuevos });
+    },
+
+    // --- DISPONIBILIDAD DE LOTES ---
+    loteSeleccionado: null,
+    setLoteSeleccionado: (val) => set({ loteSeleccionado: val }),
+
+    tooltipLote: null,
+    setTooltipLote: (val) => set({ tooltipLote: val }),
 }));

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Solo el glifo: el círculo/chip ahora lo pone el CSS (.marcador-lote-chip en
+     MarcadoresLotes.tsx), no el SVG. Dibujo más grande/sólido dentro del viewBox a propósito:
+     este ícono se ve a ~15-17px reales dentro del chip, y el detalle fino se pierde a ese
+     tamaño (ver encargo-ajuste-marcadores-recorrido360.md). -->
+<svg id="Capa_1" data-name="Capa 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 59 59" width="256" height="256">
+  <g fill="#fff">
+    <polygon points="29.5 6 6 26.5 53 26.5 29.5 6"/>
+    <rect x="12" y="25" width="35" height="28"/>
+  </g>
+</svg>

@@ -5,6 +5,7 @@ import SocialBar from './SocialBar';
 import { diccionario, traducirCategoriaHotspot } from '../data/diccionario';
 import MapaBase from './MapaBase';
 import { useClickAfuera } from '../utils/useClickAfuera';
+import { NODOS_CON_RETICULA } from '../data/reticulaLotesConfig';
 
 // Orden preferido de categorías en el filtro; cualquier categoría nueva que no esté
 // aquí (capturada en el admin) simplemente se agrega al final, alfabética.
@@ -168,6 +169,21 @@ export default function OverlayUI({ esAppEscritorio, isAdmin, onVolverAlMenu }: 
                     </button>
                 )}
 
+                {/* RETÍCULA DE LOTES (experimento, solo en los 2 nodos de terreno: LUANNA/ZANURA).
+                    Interruptor público, no solo de admin — se puede apagar en cualquier momento. */}
+                {!!NODOS_CON_RETICULA[store.nodoActual] && (
+                    <button
+                        id="btn-toggle-reticula"
+                        onClick={() => store.toggleReticulaLotes()}
+                        title={store.reticulaLotesVisible ? t["UI_RETICULA_OCULTAR"] : t["UI_RETICULA_MOSTRAR"]}
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>
+                        </svg>
+                        <span>{store.reticulaLotesVisible ? t["UI_RETICULA_OCULTAR"] : t["UI_RETICULA_MOSTRAR"]}</span>
+                    </button>
+                )}
+
                 {/* FILTRO DE HOTSPOTS (solo en la vista exterior/aérea, y solo si hay al menos
                     una categoría filtrable presente en este nodo — nada de mostrar un filtro
                     vacío). El desplegable es una checklist: cada categoría se puede prender o
@@ -282,6 +298,14 @@ export default function OverlayUI({ esAppEscritorio, isAdmin, onVolverAlMenu }: 
                     <span>{t["UI_BTN_MAPA"]}</span>
                 </button>
             </div>
+
+            {/* RETÍCULA DE LOTES: leyenda permanente mientras está encendida — no es un aviso
+                que se cierra, se queda fija todo el tiempo que la retícula esté visible. Un
+                cliente viendo "aquí va tu lote" sobre una foto puede tomarlo como el lindero
+                real, y no lo es: es un ajuste hecho a ojo. */}
+            {!!NODOS_CON_RETICULA[store.nodoActual] && store.reticulaLotesVisible && (
+                <div className="reticula-leyenda">{t["UI_RETICULA_LEYENDA"]}</div>
+            )}
 
             {/* 5. MINIMAPA GTA */}
             <MapaBase esMinimapa={true} />
