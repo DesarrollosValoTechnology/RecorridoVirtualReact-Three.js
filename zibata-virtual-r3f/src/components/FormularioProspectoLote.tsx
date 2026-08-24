@@ -1,7 +1,7 @@
 // src/components/FormularioProspectoLote.tsx
 //
-// Formulario real de captación (a diferencia de FormularioContacto.tsx, que hoy es un stub
-// que solo hace console.log). Escribe en public.prospectos_web — una rendija de solo
+// Formulario real de captación (FormularioContacto.tsx escribe en la misma tabla, con
+// origen = 'contacto-web'). Escribe en public.prospectos_web — una rendija de solo
 // escritura para `anon` (ver puertas-publicas-recorrido.sql): el INSERT nunca lleva
 // `.select()` porque no hay política de lectura, y no la va a haber.
 //
@@ -10,13 +10,8 @@ import { useState } from 'react';
 import { useTourStore } from '../store/useTourStore';
 import { supabase } from '../supabase/client';
 import { diccionario } from '../data/diccionario';
-
-// 🔴 PLACEHOLDER — el texto y el enlace reales los redacta el área jurídica. No inventar el
-// contenido legal: en cuanto lo entreguen, este es el único lugar que hay que tocar.
-const TODO_AVISO_PRIVACIDAD_URL = '#aviso-de-privacidad-pendiente';
-// Cadena corta y estable: si el aviso cambia el año que entra, esta columna dice qué firmó
-// cada persona. No es una fecha de envío, es la versión del documento que aceptó.
-const VERSION_AVISO_ACTUAL = '2026-08';
+import AvisoPrivacidadTexto from './AvisoPrivacidadTexto';
+import { VERSION_AVISO_PRIVACIDAD } from '../data/avisoPrivacidad';
 
 interface Props {
     clave: string;
@@ -40,6 +35,7 @@ export default function FormularioProspectoLote({ clave, inmueble }: Props) {
     const [enviando, setEnviando] = useState(false);
     const [enviado, setEnviado] = useState(false);
     const [error, setError] = useState('');
+    const [mostrarAviso, setMostrarAviso] = useState(false);
 
     const faltaContacto = correo.trim() === '' && telefono.trim() === '';
 
@@ -65,7 +61,7 @@ export default function FormularioProspectoLote({ clave, inmueble }: Props) {
                 lote_clave: clave,
                 inmueble,
                 acepto_aviso: true,
-                version_aviso: VERSION_AVISO_ACTUAL,
+                version_aviso: VERSION_AVISO_PRIVACIDAD,
                 campo_trampa: campoTrampa,
             }]);
 
@@ -143,11 +139,17 @@ export default function FormularioProspectoLote({ clave, inmueble }: Props) {
                 />
                 <span>
                     {t['UI_LOTE_AVISO_ACEPTO']}{' '}
-                    <a href={TODO_AVISO_PRIVACIDAD_URL} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--zibata-verde)' }}>
+                    <a
+                        href="#"
+                        onClick={(e) => { e.preventDefault(); setMostrarAviso(true); }}
+                        style={{ color: 'var(--zibata-verde)' }}
+                    >
                         {t['UI_LOTE_AVISO_LINK']}
                     </a>
                 </span>
             </label>
+
+            <AvisoPrivacidadTexto visible={mostrarAviso} onCerrar={() => setMostrarAviso(false)} />
 
             {error && (
                 <p style={{ color: '#ff6b6b', fontSize: '13px', marginTop: '10px', marginBottom: 0 }}>{error}</p>
